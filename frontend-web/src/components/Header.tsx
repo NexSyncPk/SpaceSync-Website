@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Calendar, BookOpen, User, LogOut } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
@@ -12,10 +12,12 @@ const Header: React.FC = () => {
   const isAuthenticated = useSelector(
     (state: any) => state.auth.isAuthenticated
   );
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     dispatch(logout());
     toast.success("Logged out successfully!");
+    setMobileMenuOpen(false);
   };
 
   // Don't show header on login/signup pages
@@ -36,23 +38,23 @@ const Header: React.FC = () => {
   ];
 
   return (
-    <header className="bg-primary text-white shadow-lg">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+    <header className="bg-primary text-white shadow-lg w-full">
+      <div className=" mx-auto px-4">
+        <div className="flex items-center justify-between h-16 ">
           {/* Logo */}
           <div className="flex items-center">
             <h1 className="text-xl font-bold">SpaceSync</h1>
           </div>
 
-          {/* Navigation */}
-          <nav className="hidden md:flex space-x-8">
+          {/* Navigation (Desktop) */}
+          <nav className="hidden md:flex space-x-5">
             {navItems.map(({ path, icon: Icon, label }) => (
               <Link
                 key={path}
                 to={path}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium transition-colors ${
                   location.pathname === path
-                    ? "bg-blue-700 text-white"
+                    ? "border-b-2 py-5 text-white"
                     : "text-blue-100 hover:bg-blue-600 hover:text-white"
                 }`}
               >
@@ -62,11 +64,8 @@ const Header: React.FC = () => {
             ))}
           </nav>
 
-          {/* User Info & Logout */}
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-blue-100">
-              Welcome, {user?.name || "User"}
-            </span>
+          {/* User Info & Logout (Desktop) */}
+          <div className="hidden md:flex items-center space-x-4">
             <button
               onClick={handleLogout}
               className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-600 hover:text-white transition-colors"
@@ -77,8 +76,12 @@ const Header: React.FC = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
-            <button className="text-white hover:text-blue-200">
+          <div className="md:hidden flex items-center">
+            <button
+              className="text-white hover:text-blue-200 focus:outline-none"
+              aria-label="Toggle menu"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+            >
               <svg
                 className="h-6 w-6"
                 fill="none"
@@ -96,32 +99,35 @@ const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile navigation */}
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {navItems.map(({ path, icon: Icon, label }) => (
-              <Link
-                key={path}
-                to={path}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                  location.pathname === path
-                    ? "bg-blue-700 text-white"
-                    : "text-blue-100 hover:bg-blue-600 hover:text-white"
-                }`}
+        {/* Mobile navigation (show/hide) */}
+        {mobileMenuOpen && (
+          <div className="md:hidden animate-fade-in-down">
+            <div className="pt-2 pb-3 space-y-1 bg-primary rounded-b-lg shadow-lg">
+              {navItems.map(({ path, icon: Icon, label }) => (
+                <Link
+                  key={path}
+                  to={path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center space-x-2 py-2 text-base font-medium transition-colors max-md:w-fit  ${
+                    location.pathname === path
+                      ? "border-b-2  text-white"
+                      : "text-blue-100 hover:bg-blue-600 hover:text-white"
+                  }`}
+                >
+                  <Icon size={18} />
+                  <span>{label}</span>
+                </Link>
+              ))}
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2  py-2 rounded-md text-base font-medium text-blue-100 hover:bg-blue-600 hover:text-white transition-colors w-full text-left"
               >
-                <Icon size={18} />
-                <span>{label}</span>
-              </Link>
-            ))}
-            <button
-              onClick={handleLogout}
-              className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-blue-100 hover:bg-blue-600 hover:text-white transition-colors w-full text-left"
-            >
-              <LogOut size={18} />
-              <span>Logout ({user?.name})</span>
-            </button>
+                <LogOut size={18} />
+                <span>Logout ({user?.name})</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </header>
   );

@@ -65,7 +65,21 @@ const MeetingRequirementsView: React.FC<MeetingRequirementsViewProps> = ({
   onPress,
 }) => {
   return (
-    <button onClick={onPress} className="w-full">
+    <div
+      onClick={(e) => {
+        e.preventDefault();
+        onPress();
+      }}
+      className="w-full cursor-pointer"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onPress();
+        }
+      }}
+    >
       <div
         className={`border-2 flex flex-col h-20 items-center justify-center gap-y-1 rounded-lg px-2 relative transition-all ${
           isSelected
@@ -91,7 +105,7 @@ const MeetingRequirementsView: React.FC<MeetingRequirementsViewProps> = ({
           {resource}
         </span>
       </div>
-    </button>
+    </div>
   );
 };
 

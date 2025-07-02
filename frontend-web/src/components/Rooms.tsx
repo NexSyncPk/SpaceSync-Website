@@ -24,7 +24,11 @@ const getResourceIcon = (resource: string) => {
 };
 
 const Rooms: React.FC<RoomProps> = ({ room, onSelect, isSelected = false }) => {
-  const handleSelect = () => {
+  const handleSelect = (e?: React.MouseEvent | React.KeyboardEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (onSelect) {
       onSelect(room);
     }
@@ -62,6 +66,7 @@ const Rooms: React.FC<RoomProps> = ({ room, onSelect, isSelected = false }) => {
 
           {/* Right Side - Select Button */}
           <button
+            type="button"
             onClick={handleSelect}
             className={`px-4 py-2 rounded-lg border-2 transition-colors ${
               isSelected
