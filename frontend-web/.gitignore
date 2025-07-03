@@ -87,3 +87,5 @@ temp/
 *.njsproj
 *.sln
 *.sw?
+
+frontend/

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Calendar, BookOpen, User, LogOut } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../store/slices/authSlice.js";
+import { logout } from "../../store/slices/authSlice.js";
 import toast from "react-hot-toast";
 
 const Header: React.FC = () => {

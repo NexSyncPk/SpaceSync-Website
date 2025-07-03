@@ -33,3 +33,19 @@ export const formatSelectedDate = (selectedDate: Date) => {
     day: "numeric",
   });
 };
+
+  // Helper to convert 12-hour time to 24-hour format (for input type="time")
+  export function convertTo24Hour(timeStr?: string) {
+    if (!timeStr) return "";
+    // Handles both "2:00 PM" and "14:00" cases
+    if (/AM|PM/i.test(timeStr)) {
+      const [time, modifier] = timeStr.split(" ");
+      let [hours, minutes] = time.split(":");
+      if (hours === "12") hours = "00";
+      if (modifier.toUpperCase() === "PM" && hours !== "12")
+        hours = String(parseInt(hours, 10) + 12);
+      return `${hours.padStart(2, "0")}:${minutes}`;
+    }
+    // Already 24-hour
+    return timeStr.length === 5 ? timeStr : "";
+  }

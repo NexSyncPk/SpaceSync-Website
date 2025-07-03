@@ -10,13 +10,18 @@ export interface Room {
 
 export interface Booking {
   id: number;
-  title: string;
-  date: string;
+  meetingTitle: string;
+  name: string;
+  department: string;
+  teamAgenda: string;
   startTime: string;
   endTime: string;
-  time: string; // Keep for backward compatibility
-  room: string;
+  numberOfAttendees: number;
+  meetingType: 'internal' | 'external';
+  requirements: string[];
+  roomId: number;
   status: 'pending' | 'approved' | 'completed' | 'cancelled';
+  createdBy: string;
 }
 
 // Authentication interfaces
@@ -73,5 +78,6 @@ export interface MeetingRequestData {
   numberOfAttendees: number;
   meetingType: 'internal' | 'external';
   requirements: string[];
-  selectedRoom: Room | null;
+  roomId: number;
+  status?: 'pending' | 'approved' | 'completed' | 'cancelled';
 }

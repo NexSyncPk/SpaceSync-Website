@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { number, z } from 'zod';
 
 // Login validation schema
 export const loginSchema = z.object({
@@ -56,8 +56,10 @@ export const signupSchema = z.object({
   }
 );
 
-// Meeting request validation schema
-export const meetingRequestSchema = z.object({
+
+// Meeting request base shape for reuse
+export const meetingRequestBaseShape = {
+  id: z.number().int().optional(),
   meetingTitle: z
     .string()
     .min(1, 'Meeting title is required')
@@ -93,33 +95,56 @@ export const meetingRequestSchema = z.object({
     .enum(['internal', 'external'], {
       required_error: 'Please select meeting type',
     }),
+  roomId: z.number({ required_error: 'Room is required' }),
   requirements: z
     .array(z.string())
     .default([]),
-}).refine(
-  (data) => {
-    const start = new Date(`1970-01-01T${data.startTime}:00`);
-    const end = new Date(`1970-01-01T${data.endTime}:00`);
-    return end > start;
-  },
-  {
-    message: 'End time must be after start time',
-    path: ['endTime'],
-  }
-).refine(
-  (data) => {
-    const start = new Date(`1970-01-01T${data.startTime}:00`);
-    const end = new Date(`1970-01-01T${data.endTime}:00`);
-    const diffInMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
-    return diffInMinutes >= 30;
-  },
-  {
-    message: 'Meeting must be at least 30 minutes long',
-    path: ['endTime'],
-  }
-);
+  status: z.enum(['pending', 'approved', 'completed', 'cancelled']).default('pending'),
+};
+
+export const meetingRequestSchema = z.object(meetingRequestBaseShape)
+  .refine(
+    (data) => {
+      const start = new Date(`1970-01-01T${data.startTime}:00`);
+      const end = new Date(`1970-01-01T${data.endTime}:00`);
+      return end > start;
+    },
+    {
+      message: 'End time must be after start time',
+      path: ['endTime'],
+    }
+  )
+  .refine(
+    (data) => {
+      const start = new Date(`1970-01-01T${data.startTime}:00`);
+      const end = new Date(`1970-01-01T${data.endTime}:00`);
+      const diffInMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+      return diffInMinutes >= 30;
+    },
+    {
+      message: 'Meeting must be at least 30 minutes long',
+      path: ['endTime'],
+    }
+  );
+
+// Validation schema for booking modification (updated fields)
+export const modifyBookingSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  agenda: z.string().min(1, "Agenda is required"),
+  date: z.string().min(1, "Date is required"),
+  startTime: z.string().min(1, "Start time is required"),
+  endTime: z.string().min(1, "End time is required"),
+  noOfAttendees: z.coerce.number().min(1, "Number of attendees is required"),
+  meetingType: z.enum(["Internal", "External"], {
+    errorMap: () => ({ message: "Meeting type is required" }),
+  }),
+  room: z.string().min(1, "Room is required"),
+});
+
+
 
 // Type exports
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type SignupFormData = z.infer<typeof signupSchema>;
 export type MeetingRequestFormData = z.infer<typeof meetingRequestSchema>;
+export type ModifyBookingFormData = z.infer<typeof modifyBookingSchema>;

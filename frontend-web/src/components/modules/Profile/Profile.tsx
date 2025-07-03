@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { User, Mail, Phone, Building, Settings } from "lucide-react";
 import { useSelector } from "react-redux";
+import EditProfileModal from "@/components/modals/EditProfileModal";
 
 const Profile: React.FC = () => {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const user = useSelector((state: any) => state.auth.user);
 
   // Format join date from createdAt
@@ -96,18 +98,22 @@ const Profile: React.FC = () => {
               {/* Action Buttons */}
               <div className="mt-8 pt-6 border-t border-gray-200">
                 <div className="flex flex-wrap gap-3">
-                  <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                  <button
+                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    onClick={() => setIsEditModalOpen(true)}
+                  >
                     <Settings size={16} className="mr-2" />
                     Edit Profile
                   </button>
-                  <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                    <Mail size={16} className="mr-2" />
-                    Change Email
-                  </button>
-                  <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                    <span className="mr-2">🔐</span>
-                    Change Password
-                  </button>
+                  <EditProfileModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                  />
+                  {/* Edit Profile Modal */}
+                  <EditProfileModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                  />
                 </div>
               </div>
             </div>

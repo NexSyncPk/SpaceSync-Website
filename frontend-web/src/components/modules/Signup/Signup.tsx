@@ -15,12 +15,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
-import { signupSchema, SignupFormData } from "../schema/validationSchemas.js";
-import {
-  setLoading,
-  signupSuccess,
-  setError,
-} from "../store/slices/authSlice.js";
+import { SignupFormData, signupSchema } from "@/schema/validationSchemas";
+import { setError, setLoading, signupSuccess } from "@/store/slices/authSlice";
 
 const Signup: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);

@@ -1,5 +1,5 @@
 import React from "react";
-import { Room } from "../types/interfaces.js";
+import { Room } from "../../types/interfaces.js";
 import { Monitor, Users, Presentation, Video, Tv, PenTool } from "lucide-react";
 
 interface RoomProps {

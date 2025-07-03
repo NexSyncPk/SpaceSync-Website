@@ -9,7 +9,7 @@ import authReducer from './slices/authSlice.js';
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['booking', 'auth'] // Persist booking and auth state
+  whitelist: [ 'auth'] // Persist booking and auth state
 };
 
 // Combine reducers

@@ -1,25 +1,25 @@
-import Bookings from "@/pages/Bookings";
-import Home from "@/pages/Home";
-import Login from "@/pages/Login";
-import Profile from "@/pages/Profile";
-import Signup from "@/pages/Signup";
-import Calendar from "@/pages/Calendar";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import ProtectedRoute from "@/components/shared/ProtectedRoute";
 import { Route, Routes as AppRoutes } from "react-router-dom";
+import HomeView from "@/views/HomeView";
+import BookingView from "@/views/BookingView";
+import CalendarView from "@/views/CalendarView";
+import LoginView from "@/views/LoginView";
+import SignupView from "@/views/SignupView";
+import ProfileView from "@/views/ProfileView";
 
 const Routes = () => {
   return (
     <AppRoutes>
       {/* Public Routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
+      <Route path="/login" element={<LoginView />} />
+      <Route path="/signup" element={<SignupView />} />
 
       {/* Protected Routes */}
       <Route
         path="/"
         element={
           <ProtectedRoute>
-            <Home />
+            <HomeView />
           </ProtectedRoute>
         }
       />
@@ -27,7 +27,7 @@ const Routes = () => {
         path="/bookings"
         element={
           <ProtectedRoute>
-            <Bookings />
+            <BookingView />
           </ProtectedRoute>
         }
       />
@@ -35,7 +35,7 @@ const Routes = () => {
         path="/calendar"
         element={
           <ProtectedRoute>
-            <Calendar />
+            <CalendarView />
           </ProtectedRoute>
         }
       />
@@ -43,7 +43,7 @@ const Routes = () => {
         path="/profile"
         element={
           <ProtectedRoute>
-            <Profile />
+            <ProfileView />
           </ProtectedRoute>
         }
       />

@@ -5,12 +5,8 @@ import { Eye, EyeOff, LogIn, Mail, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
-import { loginSchema, LoginFormData } from "../schema/validationSchemas.js";
-import {
-  setLoading,
-  loginSuccess,
-  setError,
-} from "../store/slices/authSlice.js";
+import { LoginFormData, loginSchema } from "@/schema/validationSchemas";
+import { loginSuccess, setError, setLoading } from "@/store/slices/authSlice";
 
 const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
