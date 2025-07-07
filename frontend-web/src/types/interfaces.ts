@@ -21,7 +21,7 @@ export interface Booking {
   requirements: string[];
   roomId: number;
   status: 'pending' | 'approved' | 'completed' | 'cancelled';
-  createdBy: string;
+  createdBy?: string; // Make this optional since mock data doesn't include it
 }
 
 // Authentication interfaces

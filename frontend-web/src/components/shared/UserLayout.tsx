@@ -1,11 +1,11 @@
 import React from "react";
 import Header from "./Header.js";
 
-interface LayoutProps {
+interface UserLayoutProps {
   children: React.ReactNode;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -14,4 +14,4 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   );
 };
 
-export default Layout;
+export default UserLayout;
