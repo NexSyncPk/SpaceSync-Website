@@ -1,40 +1,183 @@
 const BaseRepo = require("./BaseRepo");
-const Reservation = require("../models/reservation");
+const { Reservation, User, Room, ExternalAttendee } = require("../models");
+const { Op, Sequelize } = require("sequelize");
 
 class ReservationRepo extends BaseRepo {
     constructor() {
         super(Reservation);
     }
 
-    async getAllReservations() {
-        return await this.model.findAll();
-    }
-
-    async getReservationsByStatus(status) {
-        return await this.model.findAll({
-            where: {
-                status,
+    async getAllReservations(filters = {}, pagination = {}, organizationId = null) {
+        const where = { ...filters };
+        
+        const include = [
+            {
+                model: User,
+                attributes: ['id', 'name', 'email']
             },
+            {
+                model: Room,
+                attributes: ['id', 'name', 'capacity'],
+                where: organizationId ? { organizationId } : undefined
+            },
+            {
+                model: ExternalAttendee,
+                as: 'externalAttendees',
+                required: false
+            }
+        ];
+
+        if (pagination.limit) {
+            return await this.model.findAndCountAll({
+                where,
+                include,
+                limit: pagination.limit,
+                offset: pagination.offset,
+                order: [['startTime', 'DESC']]
+            });
+        }
+
+        return await this.model.findAll({
+            where,
+            include,
+            order: [['startTime', 'DESC']]
         });
     }
 
-    async getReservationById(id) {
-        return await this.model.findById(id);
+    async getReservationById(id, organizationId = null) {
+        const include = [
+            {
+                model: User,
+                attributes: ['id', 'name', 'email']
+            },
+            {
+                model: Room,
+                attributes: ['id', 'name', 'capacity'],
+                where: organizationId ? { organizationId } : undefined
+            },
+            {
+                model: ExternalAttendee,
+                as: 'externalAttendees',
+                required: false
+            }
+        ];
+
+        return await this.model.findOne({
+            where: { id },
+            include
+        });
     }
 
-    async createReservation(reservationData) {
-      return await this.model.create(reservationData);
+    async getReservationsByStatus(status, organizationId = null) {
+        const include = [
+            {
+                model: Room,
+                where: organizationId ? { organizationId } : undefined
+            }
+        ];
+
+        return await this.model.findAll({
+            where: { status },
+            include
+        });
     }
 
-    async updateReservation(id, reservationData) {
-        return await this.model.update(
-            reservationData,
-            id
-        );
+    async getReservationsByUser(userId) {
+        return await this.model.findAll({
+            where: { userId },
+            include: [
+                {
+                    model: Room,
+                    attributes: ['id', 'name', 'capacity']
+                },
+                {
+                    model: ExternalAttendee,
+                    as: 'externalAttendees',
+                    required: false
+                }
+            ],
+            order: [['startTime', 'DESC']]
+        });
     }
 
-    async deleteReservation(id) {
-      return await this.model.delete(id);
+    async getReservationsByRoom(roomId, dateRange = {}) {
+        const where = { roomId };
+        
+        if (dateRange.startDate && dateRange.endDate) {
+            where.startTime = {
+                [Op.between]: [dateRange.startDate, dateRange.endDate]
+            };
+        }
+
+        return await this.model.findAll({
+            where,
+            include: [
+                {
+                    model: User,
+                    attributes: ['id', 'name', 'email']
+                }
+            ],
+            order: [['startTime', 'ASC']]
+        });
+    }
+
+    async checkRoomAvailability(roomId, startTime, endTime, excludeReservationId = null) {
+        const where = {
+            roomId,
+            status: { [Op.ne]: 'cancelled' },
+            [Op.or]: [
+                {
+                    startTime: {
+                        [Op.between]: [startTime, endTime]
+                    }
+                },
+                {
+                    endTime: {
+                        [Op.between]: [startTime, endTime]
+                    }
+                },
+                {
+                    [Op.and]: [
+                        { startTime: { [Op.lte]: startTime } },
+                        { endTime: { [Op.gte]: endTime } }
+                    ]
+                }
+            ]
+        };
+
+        if (excludeReservationId) {
+            where.id = { [Op.ne]: excludeReservationId };
+        }
+
+        const conflictingReservations = await this.model.findAll({ where });
+        return conflictingReservations.length === 0;
+    }
+
+    async updateReservationStatus(id, status) {
+        return await this.model.update({ status }, { where: { id } });
+    }
+
+    async getUpcomingReservations(organizationId = null, limit = 10) {
+        const include = [
+            {
+                model: Room,
+                where: organizationId ? { organizationId } : undefined
+            },
+            {
+                model: User,
+                attributes: ['id', 'name', 'email']
+            }
+        ];
+
+        return await this.model.findAll({
+            where: {
+                startTime: { [Op.gt]: new Date() },
+                status: { [Op.ne]: 'cancelled' }
+            },
+            include,
+            order: [['startTime', 'ASC']],
+            limit
+        });
     }
 }
 

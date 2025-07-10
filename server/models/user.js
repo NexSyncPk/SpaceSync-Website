@@ -43,10 +43,11 @@ module.exports = (sequelize, DataTypes) => {
                         msg: "Password must be between 6 and 100 characters long",
                     },
                 },
-            },            role: {
-                type: DataTypes.ENUM('admin', 'employee'),
+            },
+            role: {
+                type: DataTypes.ENUM('admin', 'employee', 'unassigned'),
                 allowNull: false,
-                defaultValue: "employee",
+                defaultValue: "unassigned",
             },
         },
         {

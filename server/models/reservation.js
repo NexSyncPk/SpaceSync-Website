@@ -42,10 +42,27 @@ module.exports = (sequelize, DataTypes) => {
                 type: DataTypes.ENUM("pending", "confirmed", "cancelled"),
                 allowNull: false,
                 defaultValue: "pending",
-            },            internalAttendees: {
+            },
+            internalAttendees: {
                 type: DataTypes.ARRAY(DataTypes.UUID),
                 allowNull: true,
                 defaultValue: [],
+            },
+            userId: {
+                type: DataTypes.UUID,
+                allowNull: false,
+                references: {
+                    model: 'Users',
+                    key: 'id'
+                }
+            },
+            roomId: {
+                type: DataTypes.UUID,
+                allowNull: false,
+                references: {
+                    model: 'Rooms',
+                    key: 'id'
+                }
             },
         },
         {

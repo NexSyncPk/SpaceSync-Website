@@ -12,14 +12,6 @@ class ReservationValidator extends BaseValidator {
                 'string.empty': 'Room ID is required'
             }),
         
-        userId: Joi.string()
-            .uuid()
-            .required()
-            .messages({
-                'string.guid': 'User ID must be a valid UUID',
-                'string.empty': 'User ID is required'
-            }),
-        
         startTime: Joi.date()
             .iso()
             .greater('now')
@@ -243,10 +235,22 @@ class ReservationValidator extends BaseValidator {
             })
     });
 
+    // Schema for updating reservation status
+    statusUpdateSchema = Joi.object({
+        status: Joi.string()
+            .valid('pending', 'confirmed', 'cancelled')
+            .required()
+            .messages({
+                'any.only': 'Status must be pending, confirmed, or cancelled',
+                'any.required': 'Status is required'
+            })
+    });
+
     validateCreateReservation = (data) => this.validate(this.createReservationSchema, data);
     validateUpdateReservation = (data) => this.validate(this.updateReservationSchema, data);
     validateSearchReservation = (data) => this.validate(this.searchReservationSchema, data);
     validateCheckAvailability = (data) => this.validate(this.checkAvailabilitySchema, data);
+    validateStatusUpdate = (data) => this.validate(this.statusUpdateSchema, data);
 }
 
 module.exports = ReservationValidator;

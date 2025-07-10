@@ -49,14 +49,6 @@ class RoomValidator extends BaseValidator {
             .default(false)
             .messages({
                 'boolean.base': 'Video conference available must be true or false'
-            }),
-        
-        organizationId: Joi.string()
-            .uuid()
-            .required()
-            .messages({
-                'string.guid': 'Organization ID must be a valid UUID',
-                'string.empty': 'Organization ID is required'
             })
     });
 
@@ -152,7 +144,7 @@ class RoomValidator extends BaseValidator {
 
     validateCreateRoom = (data) => this.validate(this.createRoomSchema, data);
     validateUpdateRoom = (data) => this.validate(this.updateRoomSchema, data);
-    validateSearchRoom = (data) => this.validate(this.searchRoomSchema, data);
+    validateSearchRooms = (data) => this.validate(this.searchRoomSchema, data);
 }
 
 module.exports = RoomValidator;

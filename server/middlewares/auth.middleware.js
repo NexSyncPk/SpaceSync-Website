@@ -1,4 +1,4 @@
-const jwt = requestuire("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 const CustomError = require("../utils/CustomError");
 
 const authenticate = function (request, response, next) {
@@ -13,7 +13,7 @@ const authenticate = function (request, response, next) {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        request.admin = decoded;
+        request.user = decoded;
         next();
     } catch (err) {
         const error = new CustomError("Invalid token", 401);

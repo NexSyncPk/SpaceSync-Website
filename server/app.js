@@ -1,8 +1,10 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./utils/swagger");
 
-// const routes = require("./router/routes");
+const routes = require("./router/routes");
 const errorMiddleware = require("./middlewares/error.middleware");
 
 const app = express();
@@ -18,6 +20,8 @@ app.use(
 );
 
 app.use(morgan("dev"));
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use("/api", routes);
 

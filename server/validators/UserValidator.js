@@ -33,15 +33,14 @@ class UserValidator extends BaseValidator {
             }),
         
         role: Joi.string()
-            .valid('admin', 'employee')
-            .default('employee')
+            .valid('admin', 'employee', 'unassigned')
+            .default('unassigned')
             .messages({
-                'any.only': 'Role must be either admin or employee'
+                'any.only': 'Role must be admin, employee, or unassigned'
             }),
         
         organizationId: Joi.string()
             .uuid()
-            .required()
             .messages({
                 'string.guid': 'Organization ID must be a valid UUID',
                 'string.empty': 'Organization ID is required'
@@ -82,9 +81,9 @@ class UserValidator extends BaseValidator {
             }),
         
         role: Joi.string()
-            .valid('admin', 'employee')
+            .valid('admin', 'employee', 'unassigned')
             .messages({
-                'any.only': 'Role must be either admin or employee'
+                'any.only': 'Role must be admin, employee, or unassigned'
             })
     }).min(1).messages({
         'object.min': 'At least one field must be provided for update'

@@ -41,10 +41,19 @@ module.exports = (sequelize, DataTypes) => {
             cateringAvailable: {
                 type: DataTypes.BOOLEAN,
                 defaultValue: false,
-            },            videoConferenceAvailable: {
+            },
+            videoConferenceAvailable: {
                 type: DataTypes.BOOLEAN,
                 defaultValue: false,
             },
+            // organizationId: {
+            //     type: DataTypes.UUID,
+            //     allowNull: false,
+            //     references: {
+            //         model: 'Organizations',
+            //         key: 'id'
+            //     }
+            // },
         },
         {
             sequelize,
