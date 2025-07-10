@@ -1,6 +1,13 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Calendar, BookOpen, User, LogOut } from "lucide-react";
+import {
+  Home,
+  Calendar,
+  BookOpen,
+  User,
+  LogOut,
+  BarChart3,
+} from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../../store/slices/authSlice.js";
 import toast from "react-hot-toast";
@@ -9,10 +16,14 @@ const Header: React.FC = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const user = useSelector((state: any) => state.auth.user);
+  const organization = useSelector((state: any) => state.organization.current);
   const isAuthenticated = useSelector(
     (state: any) => state.auth.isAuthenticated
   );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Check if user is admin
+  const isAdmin = organization?.role === "admin";
 
   const handleLogout = () => {
     dispatch(logout());
@@ -37,17 +48,26 @@ const Header: React.FC = () => {
     { path: "/profile", icon: User, label: "Profile" },
   ];
 
+  // Add dashboard option for admin users
+  if (isAdmin) {
+    navItems.splice(1, 0, {
+      path: "/admin/dashboard",
+      icon: BarChart3,
+      label: "Dashboard",
+    });
+  }
+
   return (
     <header className="bg-primary text-white shadow-lg w-full">
       <div className=" mx-auto px-4">
         <div className="flex items-center justify-between h-16 ">
           {/* Logo */}
           <div className="flex items-center">
-            <h1 className="text-xl font-bold">SpaceSync</h1>
+            <h1 className="text-xl font-bold">MRMS</h1>
           </div>
 
           {/* Navigation (Desktop) */}
-          <nav className="hidden md:flex space-x-5">
+          <nav className="hidden lg:flex space-x-5">
             {navItems.map(({ path, icon: Icon, label }) => (
               <Link
                 key={path}
@@ -65,7 +85,7 @@ const Header: React.FC = () => {
           </nav>
 
           {/* User Info & Logout (Desktop) */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-4">
             <button
               onClick={handleLogout}
               className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-600 hover:text-white transition-colors"
@@ -76,7 +96,7 @@ const Header: React.FC = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          <div className="lg:hidden flex items-center">
             <button
               className="text-white hover:text-blue-200 focus:outline-none"
               aria-label="Toggle menu"

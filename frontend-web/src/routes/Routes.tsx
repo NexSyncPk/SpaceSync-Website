@@ -12,7 +12,6 @@ import AdminDashboard from "@/views/AdminDashboard";
 import RoomManagementView from "@/views/RoomManagementView";
 import BookingManagementView from "@/views/BookingManagementView";
 import UserManagementView from "@/views/UserManagementView";
-import AnalyticsView from "@/views/AnalyticsView";
 
 const Routes = () => {
   return (
@@ -110,16 +109,6 @@ const Routes = () => {
           <ProtectedRoute>
             <AdminLayout>
               <UserManagementView />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/analytics"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AnalyticsView />
             </AdminLayout>
           </ProtectedRoute>
         }

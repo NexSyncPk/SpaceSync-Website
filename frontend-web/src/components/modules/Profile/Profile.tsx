@@ -1,11 +1,21 @@
 import React, { useState } from "react";
-import { User, Mail, Phone, Building, Settings } from "lucide-react";
+import {
+  User,
+  Mail,
+  Phone,
+  Building,
+  Settings,
+  Users,
+  Shield,
+} from "lucide-react";
 import { useSelector } from "react-redux";
 import EditProfileModal from "@/components/modals/EditProfileModal";
+import NotificationBell from "@/components/shared/NotificationBell";
 
 const Profile: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const user = useSelector((state: any) => state.auth.user);
+  const organization = useSelector((state: any) => state.organization.current);
 
   // Format join date from createdAt
   const joinDate = user?.createdAt
@@ -17,16 +27,18 @@ const Profile: React.FC = () => {
 
   // Fallback data if user is not available
   const userInfo = {
-    name: user?.name || "Unknown User",
-    email: user?.email || "N/A",
+    name: user?.name || "Current User",
+    email: user?.email || "user@example.com",
     phone: user?.phone || "N/A",
     department: user?.department || "N/A",
     position: user?.position || "N/A",
     joinDate: joinDate,
+    role: organization?.role || "member",
+    organization: organization?.name || "N/A",
   };
 
   return (
-    <div className="min-h-screen bg-white w-full sm:w-5/6 md:w-4/6 mx-auto p-5 rounded-lg shadow-2xl">
+    <div className="min-h-fit bg-white w-full sm:w-5/6 md:w-4/6 mx-auto p-5 rounded-lg shadow-2xl">
       <div className="w-full max-w-4xl mx-auto px-4">
         <div className="mt-6">
           <h2 className="font-semibold mb-6 text-lg">Profile</h2>
@@ -35,14 +47,30 @@ const Profile: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8">
-              <div className="flex items-center">
-                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
-                  <User size={40} className="text-blue-600" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
+                    <User size={40} className="text-blue-600" />
+                  </div>
+                  <div className="ml-6 text-white">
+                    <h3 className="text-2xl font-bold">{userInfo.name}</h3>
+                    <p className="text-blue-100">{userInfo.position}</p>
+                    <p className="text-blue-100">{userInfo.department}</p>
+                  </div>
                 </div>
-                <div className="ml-6 text-white">
-                  <h3 className="text-2xl font-bold">{userInfo.name}</h3>
-                  <p className="text-blue-100">{userInfo.position}</p>
-                  <p className="text-blue-100">{userInfo.department}</p>
+                {/* Role Badge */}
+                <div className="flex items-center space-x-3">
+                  {userInfo.role === "admin" && <NotificationBell />}
+                  <div className="flex items-center bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                    {userInfo.role === "admin" ? (
+                      <Shield size={16} className="text-yellow-300 mr-2" />
+                    ) : (
+                      <Users size={16} className="text-blue-200 mr-2" />
+                    )}
+                    <span className="text-white text-sm font-medium capitalize">
+                      {userInfo.role}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -78,6 +106,12 @@ const Profile: React.FC = () => {
                     <div className="flex items-center">
                       <Building size={16} className="text-gray-400 mr-3" />
                       <span className="text-gray-600">
+                        {userInfo.organization}
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <Users size={16} className="text-gray-400 mr-3" />
+                      <span className="text-gray-600">
                         {userInfo.department}
                       </span>
                     </div>
@@ -95,6 +129,50 @@ const Profile: React.FC = () => {
                 </div>
               </div>
 
+              {/* Organization Details */}
+              {organization && (
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-semibold text-gray-800 mb-3">
+                    Organization Details
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-500">Industry:</span>
+                      <p className="text-gray-700">
+                        {organization.industry || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Description:</span>
+                      <p className="text-gray-700">
+                        {organization.description || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Member Count:</span>
+                      <p className="text-gray-700">
+                        {organization.memberCount || 0}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Joined:</span>
+                      <p className="text-gray-700">
+                        {organization.joinedAt
+                          ? new Date(organization.joinedAt).toLocaleDateString(
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              }
+                            )
+                          : "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="mt-8 pt-6 border-t border-gray-200">
                 <div className="flex flex-wrap gap-3">
@@ -105,11 +183,7 @@ const Profile: React.FC = () => {
                     <Settings size={16} className="mr-2" />
                     Edit Profile
                   </button>
-                  <EditProfileModal
-                    isOpen={isEditModalOpen}
-                    onClose={() => setIsEditModalOpen(false)}
-                  />
-                  {/* Edit Profile Modal */}
+
                   <EditProfileModal
                     isOpen={isEditModalOpen}
                     onClose={() => setIsEditModalOpen(false)}
@@ -120,7 +194,7 @@ const Profile: React.FC = () => {
           </div>
 
           {/* Recent Activity */}
-          <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          {/* <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h4 className="font-semibold text-gray-800 mb-4">
               Recent Activity
             </h4>
@@ -142,7 +216,7 @@ const Profile: React.FC = () => {
                 <span className="text-sm text-gray-400">3 days ago</span>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

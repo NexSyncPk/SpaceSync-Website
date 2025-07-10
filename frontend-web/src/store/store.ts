@@ -4,18 +4,21 @@ import storage from 'redux-persist/lib/storage';
 import { combineReducers } from '@reduxjs/toolkit';
 import bookingReducer from './slices/bookingSlice.js';
 import authReducer from './slices/authSlice.js';
-
+import organizationReducer from './slices/organizationSlice.js';
+import notificationReducer from './slices/notificationSlice.js';
 // Persist configuration
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: [ 'auth'] // Persist booking and auth state
+  whitelist: [] // Persist booking and auth state
 };
 
 // Combine reducers
 const rootReducer = combineReducers({
   booking: bookingReducer,
   auth: authReducer,
+  organization: organizationReducer,
+  notification: notificationReducer
 });
 
 // Create persisted reducer

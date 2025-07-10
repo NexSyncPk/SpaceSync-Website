@@ -6,6 +6,8 @@ export const getStatusColor = (status: string) => {
       return "bg-orange-100 border-orange-200";
     case "completed":
       return "bg-blue-100 border-blue-200";
+    case "cancelled":
+        return "bg-red-100 border-red-200"
     default:
       return "bg-gray-100 border-gray-200";
   }
@@ -19,6 +21,8 @@ export const getStatusTextColor = (status: string) => {
       return "text-orange-700";
     case "completed":
       return "text-blue-700";
+    case "cancelled":
+      return "text-red-500";
     default:
       return "text-gray-700";
   }
