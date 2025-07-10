@@ -1,14 +1,14 @@
+const CustomError = require("../utils/CustomError");
 const { generateResponse } = require("../utils/responseHelper");
 
 class BaseController {
-    successResponse(response, data, message = "Success") {
-        return response.status(200).json(generateResponse(true, message, data));
+    successResponse(message = "Success", data, status = 200) {
+        return response.status(status).json(generateResponse(true, message, data));
     }
 
-    sendResponse(response, status = 200, message = "Success", data = null) {
-        return response
-            .status(status)
-            .json(generateResponse(true, message, data));
+    failureResponse(message = "Failed", next, status = 400){
+        const error = new CustomError(message, status);
+        return next(error);
     }
 }
 
