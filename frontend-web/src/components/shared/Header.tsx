@@ -25,7 +25,7 @@ const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Check if user is admin
-  const isAdmin = organization?.role === "admin";
+  const isAdmin = user?.role === "admin";
 
   const handleLogout = () => {
     dispatch(logout());

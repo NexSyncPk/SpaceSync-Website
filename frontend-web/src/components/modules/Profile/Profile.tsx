@@ -15,6 +15,7 @@ import NotificationBell from "@/components/shared/NotificationBell";
 const Profile: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const user = useSelector((state: any) => state.auth.user);
+  console.log(user);
   const organization = useSelector((state: any) => state.organization.current);
 
   // Format join date from createdAt
