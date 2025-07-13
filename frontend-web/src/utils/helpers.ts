@@ -53,3 +53,46 @@ export const formatSelectedDate = (selectedDate: Date) => {
     // Already 24-hour
     return timeStr.length === 5 ? timeStr : "";
   }
+
+import { store } from '@/store/store';
+
+// Get token from Redux store
+export const getToken = (): string | null => {
+  try {
+    const state = store.getState();
+    return state.auth?.token || null;
+  } catch (error) {
+    console.error('Error getting token from Redux store:', error);
+    return null;
+  }
+};
+
+// User information helpers
+export const getUserFromToken = (token: string) => {
+  try {
+    // Basic JWT token parsing (for client-side use only)
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Error parsing token:', error);
+    return null;
+  }
+};
+
+export const isTokenExpired = (token: string): boolean => {
+  try {
+    const payload = getUserFromToken(token);
+    if (!payload || !payload.exp) return true;
+    
+    const currentTime = Date.now() / 1000;
+    return payload.exp < currentTime;
+  } catch (error) {
+    console.error('Error checking token expiration:', error);
+    return true;
+  }
+};

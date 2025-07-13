@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { LoginFormData, loginSchema } from "@/schema/validationSchemas";
 import { loginSuccess, setError, setLoading } from "@/store/slices/authSlice";
+import { login } from "@/api/services/authService";
 
 const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -26,28 +27,13 @@ const Login: React.FC = () => {
     dispatch(setLoading(true));
 
     try {
-      // Simulate API call - replace with your actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await login(data);
 
-      // Mock successful login - replace with actual API response
-      const mockUser = {
-        id: "1",
-        name: "John Doe",
-        email: data.email,
-        phone: "0310245687",
-        department: "Engineering",
-        position: "Senior Developer",
-        createdAt: "2023-01-01T00:00:00.000Z",
-      };
-
-      const mockToken = "mock-jwt-token-" + Date.now();
-
-      // Dispatch success action
-      dispatch(loginSuccess({ user: mockUser, token: mockToken }));
-
-      toast.success("Login successful! Welcome back.");
-      reset();
-      navigate("/"); // Redirect to home page
+      if (response) {
+        dispatch(loginSuccess(response.data));
+        console.log(response, response.data);
+        reset();
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error

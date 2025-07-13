@@ -43,6 +43,8 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  canCreateOrganization: boolean | null;
+  canJoinOrganization: boolean | null;
 }
 
 // Form data interfaces

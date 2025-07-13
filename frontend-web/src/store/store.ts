@@ -10,7 +10,7 @@ import notificationReducer from './slices/notificationSlice.js';
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: [] // Persist booking and auth state
+  whitelist: ['auth', 'booking'] // Persist auth and booking state
 };
 
 // Combine reducers
@@ -45,3 +45,7 @@ export const store = configureStore({
 
 // Create persistor
 export const persistor = persistStore(store);
+
+// Export store types
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;

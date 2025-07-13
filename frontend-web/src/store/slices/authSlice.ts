@@ -7,6 +7,9 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  canCreateOrganization: null,
+  canJoinOrganization: null,
+
 };
 
 const authSlice = createSlice({
@@ -22,9 +25,11 @@ const authSlice = createSlice({
     },
 
     // Login success - store user and token
-    loginSuccess: (state, action: PayloadAction<{ user: User; token: string }>) => {
+    loginSuccess: (state, action: PayloadAction<{ user: User; token: string, canCreateOrganization: boolean, canJoinOrganization: boolean  }>) => {
       state.user = action.payload.user;
       state.token = action.payload.token;
+      state.canCreateOrganization = action.payload.canCreateOrganization;
+      state.canJoinOrganization = action.payload.canJoinOrganization;
       state.isAuthenticated = true;
       state.isLoading = false;
       state.error = null;
@@ -57,6 +62,8 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.isLoading = false;
       state.error = null;
+      state.canCreateOrganization=null;
+      state.canJoinOrganization=null;
     },
 
     // Update user profile
