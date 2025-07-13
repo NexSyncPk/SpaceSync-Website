@@ -3,6 +3,7 @@ const RoomRepo = require("../repos/RoomRepo");
 const BaseController = require("./BaseController");
 const ReservationValidator = require("../validators/ReservationValidator");
 const { notifyAdminNewReservation, notifyEmployeeReservationStatus, notifyReservationUpdated, notifyReservationCancelled } = require("../services/SocketService");
+const reservationStatusService = require("../services/ReservationStatusService");
 
 class ReservationController extends BaseController {
     constructor() {
@@ -58,6 +59,9 @@ class ReservationController extends BaseController {
     }
 
     createReservation = async (request, response, next) => {
+
+        console.log("AAAAAAAAAAAAAAAAAAAAA", request.body);
+
         const organizationId = request.user.organizationId;
         const userId = request.user.userId;
 
@@ -78,6 +82,13 @@ class ReservationController extends BaseController {
         );
         if (!isAvailable) {
             return this.failureResponse("Room is not available for the selected time slot!", next, 409);
+        }
+
+        if (validationResult.data.requiredAmenities && validationResult.data.requiredAmenities.length > 0) {
+            const roomRequirementsValid = this.validateRoomRequirements(room, validationResult.data.requiredAmenities);
+            if (!roomRequirementsValid.valid) {
+                return this.failureResponse(roomRequirementsValid.message, next, 400);
+            }
         }
 
         const reservationData = {
@@ -130,6 +141,15 @@ class ReservationController extends BaseController {
             );
             if (!isAvailable) {
                 return this.failureResponse("Room is not available for the selected time slot!", next, 409);
+            }
+        }
+
+        // Validate room requirements if specified
+        if (validationResult.data.requiredAmenities && validationResult.data.requiredAmenities.length > 0) {
+            const room = await this.roomRepo.getRoomById(existingReservation.roomId, organizationId);
+            const roomRequirementsValid = this.validateRoomRequirements(room, validationResult.data.requiredAmenities);
+            if (!roomRequirementsValid.valid) {
+                return this.failureResponse(roomRequirementsValid.message, next, 400);
             }
         }
 
@@ -218,6 +238,58 @@ class ReservationController extends BaseController {
 
         const reservations = await this.reservationRepo.getUpcomingReservations(organizationId, parseInt(limit));
         return this.successResponse(response, "Upcoming reservations retrieved successfully!", reservations);
+    }
+
+    // Manually complete a reservation (admin only)
+    completeReservation = async (request, response, next) => {
+        const { reservationId } = request.params;
+        const organizationId = request.user.organizationId;
+
+        try {
+            const reservation = await this.reservationRepo.getReservationById(reservationId, organizationId);
+            if (!reservation) {
+                return this.failureResponse("Reservation not found!", next, 404);
+            }
+
+            if (reservation.status === 'completed') {
+                return this.failureResponse("Reservation is already completed!", next, 400);
+            }
+
+            if (reservation.status === 'cancelled') {
+                return this.failureResponse("Cannot complete a cancelled reservation!", next, 400);
+            }
+
+            // Use the service to complete the reservation
+            await reservationStatusService.completeReservation(reservationId);
+            
+            const updatedReservation = await this.reservationRepo.getReservationById(reservationId, organizationId);
+            
+            return this.successResponse(response, "Reservation completed successfully!", updatedReservation);
+            
+        } catch (error) {
+            console.error("Error completing reservation:", error);
+            return this.failureResponse("Failed to complete reservation", next, 500);
+        }
+    }
+
+    // Helper method to validate room requirements
+    validateRoomRequirements = (room, requiredAmenities) => {
+        const missingAmenities = [];
+        
+        for (const amenity of requiredAmenities) {
+            if (!room[amenity]) {
+                missingAmenities.push(amenity);
+            }
+        }
+        
+        if (missingAmenities.length > 0) {
+            return {
+                valid: false,
+                message: `Room does not have the following required amenities: ${missingAmenities.join(', ')}`
+            };
+        }
+        
+        return { valid: true };
     }
 }
 

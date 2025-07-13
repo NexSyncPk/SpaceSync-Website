@@ -13,11 +13,11 @@ class ReservationRepo extends BaseRepo {
         const include = [
             {
                 model: User,
-                attributes: ['id', 'name', 'email']
+                attributes: ['id', 'name', 'email', 'phone', 'department'],
             },
             {
                 model: Room,
-                attributes: ['id', 'name', 'capacity'],
+                attributes: ['id', 'name', 'capacity', 'displayProjector', 'displayWhiteboard', 'cateringAvailable', 'videoConferenceAvailable'],
                 where: organizationId ? { organizationId } : undefined
             },
             {
@@ -48,11 +48,11 @@ class ReservationRepo extends BaseRepo {
         const include = [
             {
                 model: User,
-                attributes: ['id', 'name', 'email']
+                attributes: ['id', 'name', 'email', 'phone', 'department'],
             },
             {
                 model: Room,
-                attributes: ['id', 'name', 'capacity'],
+                attributes: ['id', 'name', 'capacity', 'displayProjector', 'displayWhiteboard', 'cateringAvailable', 'videoConferenceAvailable'],
                 where: organizationId ? { organizationId } : undefined
             },
             {
@@ -88,7 +88,7 @@ class ReservationRepo extends BaseRepo {
             include: [
                 {
                     model: Room,
-                    attributes: ['id', 'name', 'capacity']
+                    attributes: ['id', 'name', 'capacity', 'displayProjector', 'displayWhiteboard', 'cateringAvailable', 'videoConferenceAvailable']
                 },
                 {
                     model: ExternalAttendee,
@@ -114,7 +114,7 @@ class ReservationRepo extends BaseRepo {
             include: [
                 {
                     model: User,
-                    attributes: ['id', 'name', 'email']
+                    attributes: ['id', 'name', 'email', 'phone', 'department'],
                 }
             ],
             order: [['startTime', 'ASC']]

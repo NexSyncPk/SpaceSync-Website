@@ -4,6 +4,7 @@ const app = require("./app");
 const { createServer } = require("http");
 const { initializeSocket } = require("./services/SocketService");
 const roomStatusService = require("./services/RoomStatusService");
+const reservationStatusService = require("./services/ReservationStatusService");
 
 const PORT = process.env.PORT || 8000;
 
@@ -16,10 +17,14 @@ initializeSocket(server);
 // Start room status monitoring
 roomStatusService.startMonitoring();
 
+// Start reservation status monitoring
+reservationStatusService.start();
+
 server.listen(PORT, () => {
     console.log(`Server is running on PORT ${PORT}`);
     console.log(`Socket.io initialized and ready for connections`);
     console.log(`Room status monitoring started`);
+    console.log(`Reservation status monitoring started`);
 });
 
 process.on("unhandledRejection", (err) => {
@@ -36,6 +41,7 @@ process.on("uncaughtException", (err) => {
 process.on('SIGTERM', () => {
     console.log('SIGTERM received, shutting down gracefully');
     roomStatusService.stopMonitoring();
+    reservationStatusService.stop();
     server.close(() => {
         console.log('Process terminated');
     });

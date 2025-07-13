@@ -56,6 +56,22 @@ const options = {
               maxLength: 100,
               description: "User's password (6-100 characters)"
             },
+            phone: {
+              type: "string",
+              nullable: true,
+              pattern: "^\\+?[1-9]\\d{1,14}$",
+              description: "User's phone number"
+            },
+            department: {
+              type: "string",
+              nullable: true,
+              description: "User's department"
+            },
+            position: {
+              type: "string",
+              nullable: true,
+              description: "User's position/job title"
+            },
             role: {
               type: "string",
               enum: ["admin", "employee", "unassigned"],
@@ -127,6 +143,11 @@ const options = {
             name: {
               type: "string",
               description: "Organization name"
+            },
+            description: {
+              type: "string",
+              nullable: true,
+              description: "Organization description"
             },
             inviteKey: {
               type: "string",
@@ -224,7 +245,7 @@ const options = {
             },
             status: {
               type: "string",
-              enum: ["pending", "confirmed", "cancelled"],
+              enum: ["pending", "confirmed", "cancelled", "completed"],
               default: "pending",
               description: "Reservation status"
             },
@@ -235,6 +256,14 @@ const options = {
                 format: "uuid"
               },
               description: "Array of user IDs who are internal attendees"
+            },
+            requiredAmenities: {
+              type: "array",
+              items: {
+                type: "string",
+                enum: ["displayProjector", "displayWhiteboard", "cateringAvailable", "videoConferenceAvailable"]
+              },
+              description: "Array of required room amenities for this reservation"
             },
             userId: {
               type: "string",

@@ -3,6 +3,7 @@ const router = express.Router({ mergeParams: true });
 const ReservationController = require("../controllers/ReservationController");
 const asyncErrorHandler = require("../utils/asyncErrorHandler");
 const authMiddleware = require("../middlewares/auth.middleware");
+const rbacMiddleware = require("../middlewares/rbac.middleware");
 const externalAttendeesRoutes = require("./externalAttendees.route");
 
 const reservationController = new ReservationController();
@@ -28,7 +29,7 @@ router.use(authMiddleware);
  *         name: status
  *         schema:
  *           type: string
- *           enum: [pending, confirmed, cancelled]
+ *           enum: [pending, confirmed, cancelled, completed]
  *         description: Filter by reservation status
  *       - in: query
  *         name: startDate
@@ -99,6 +100,12 @@ router.use(authMiddleware);
  *                   type: string
  *                   format: uuid
  *                 description: Array of user IDs who are internal attendees
+ *               requiredAmenities:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   enum: [displayProjector, displayWhiteboard, cateringAvailable, videoConferenceAvailable]
+ *                 description: Array of required room amenities for this reservation
  *     responses:
  *       201:
  *         description: Reservation created successfully
@@ -170,7 +177,7 @@ router.get("/upcoming", asyncErrorHandler(reservationController.getUpcomingReser
  *         name: status
  *         schema:
  *           type: string
- *           enum: [pending, confirmed, cancelled]
+ *           enum: [pending, confirmed, cancelled, completed]
  *         description: Filter by reservation status
  *     responses:
  *       200:
@@ -356,7 +363,7 @@ router.delete("/:reservationId", asyncErrorHandler(reservationController.deleteR
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [pending, confirmed, cancelled]
+ *                 enum: [pending, confirmed, cancelled, completed]
  *                 description: New reservation status
  *     responses:
  *       200:
@@ -390,6 +397,49 @@ router.delete("/:reservationId", asyncErrorHandler(reservationController.deleteR
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.patch("/:reservationId/status", asyncErrorHandler(reservationController.updateReservationStatus.bind(reservationController)));
+
+/**
+ * @swagger
+ * /reservations/{reservationId}/complete:
+ *   patch:
+ *     summary: Manually complete a reservation
+ *     description: Manually mark a reservation as completed. Admin only operation.
+ *     tags: [Reservations]
+ *     parameters:
+ *       - in: path
+ *         name: reservationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The reservation ID
+ *     responses:
+ *       200:
+ *         description: Reservation completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ReservationResponse'
+ *       400:
+ *         description: Bad request - reservation already completed or cancelled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Forbidden - Admin role required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Reservation not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.patch("/:reservationId/complete", rbacMiddleware(['admin']), asyncErrorHandler(reservationController.completeReservation.bind(reservationController)));
 
 // Nested external attendees routes
 router.use("/:reservationId/attendees", externalAttendeesRoutes);
