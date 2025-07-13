@@ -5,7 +5,7 @@ import CreateOrganization from "./CreateOrganization";
 import JoinOrganization from "./JoinOrganization";
 import MyOrganization from "./MyOrganization";
 
-const OrganizationSelection: React.FC = () => {
+const Organization: React.FC = () => {
   const [selectedOption, setSelectedOption] = useState<
     "create" | "join" | "my" | null
   >(null);
@@ -122,4 +122,4 @@ const OrganizationSelection: React.FC = () => {
   );
 };
 
-export default OrganizationSelection;
+export default Organization;

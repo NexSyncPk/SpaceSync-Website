@@ -1,4 +1,5 @@
 import ProtectedRoute from "@/components/shared/ProtectedRoute";
+import PublicRoute from "@/components/shared/PublicRoute";
 import AdminLayout from "@/components/shared/AdminLayout";
 import UserLayout from "../components/shared/UserLayout";
 import { Route, Routes as AppRoutes } from "react-router-dom";
@@ -12,13 +13,28 @@ import AdminDashboard from "@/views/AdminDashboard";
 import RoomManagementView from "@/views/RoomManagementView";
 import BookingManagementView from "@/views/BookingManagementView";
 import UserManagementView from "@/views/UserManagementView";
+import OrganizationView from "@/views/OrganizationView";
 
 const Routes = () => {
   return (
     <AppRoutes>
-      {/* Public Routes */}
-      <Route path="/login" element={<LoginView />} />
-      <Route path="/signup" element={<SignupView />} />
+      {/* Public Routes - Redirect authenticated users */}
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <LoginView />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <PublicRoute>
+            <SignupView />
+          </PublicRoute>
+        }
+      />
 
       {/* Protected User Routes */}
       <Route
@@ -61,6 +77,16 @@ const Routes = () => {
           </ProtectedRoute>
         }
       />
+      {/* <Route
+        path="/organization"
+        element={
+          <ProtectedRoute>
+            <UserLayout>
+              <OrganizationView />
+            </UserLayout>
+          </ProtectedRoute>
+        }
+      /> */}
 
       {/* Admin Routes */}
       <Route

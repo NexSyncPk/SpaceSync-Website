@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { SignupFormData, signupSchema } from "@/schema/validationSchemas";
 import { setError, setLoading, signupSuccess } from "@/store/slices/authSlice";
+import { signup } from "@/api/services/authService";
 
 const Signup: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -38,24 +39,12 @@ const Signup: React.FC = () => {
 
     try {
       // Simulate API call - replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // Mock successful signup - replace with actual API response
-      const mockUser = {
-        id: Date.now().toString(),
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        department: data.department,
-        position: data.position,
-      };
-
-      const mockToken = "mock-jwt-token-" + Date.now();
-
-      // Dispatch success action
-      dispatch(signupSuccess({ user: mockUser, token: mockToken }));
-
-      toast.success("Account created successfully! Welcome to SpaceSync.");
+      const response = await signup(data);
+      if (response) {
+        console.log(response);
+      }
+      // toast.success("Account created successfully! Welcome to SpaceSync.");
       reset();
       navigate("/"); // Redirect to home page
     } catch (error) {

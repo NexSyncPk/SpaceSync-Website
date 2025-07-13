@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   Calendar,
@@ -11,10 +11,12 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../../store/slices/authSlice.js";
 import toast from "react-hot-toast";
+import { clearOrganization } from "@/store/slices/organizationSlice.js";
 
 const Header: React.FC = () => {
   const location = useLocation();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const user = useSelector((state: any) => state.auth.user);
   const organization = useSelector((state: any) => state.organization.current);
   const isAuthenticated = useSelector(
@@ -27,8 +29,10 @@ const Header: React.FC = () => {
 
   const handleLogout = () => {
     dispatch(logout());
+    dispatch(clearOrganization());
     toast.success("Logged out successfully!");
     setMobileMenuOpen(false);
+    navigate("/login");
   };
 
   // Don't show header on login/signup pages

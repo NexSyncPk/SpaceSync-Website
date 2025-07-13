@@ -10,7 +10,7 @@ import notificationReducer from './slices/notificationSlice.js';
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['auth', 'booking'] // Persist auth and booking state
+  whitelist: ['auth', 'booking', 'organization'] // Persist auth and booking state
 };
 
 // Combine reducers

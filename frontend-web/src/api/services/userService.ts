@@ -1,4 +1,4 @@
-import { ORGANIZATION_BY_ID } from "../endpoints";
+import { ORGANIZATION_BY_ID, USER_CREATE_ORGANIZATION } from "../endpoints";
 import api from "../interceptor";
 
 const fetchOrganizationByUser = (userId: string)=>{
@@ -11,7 +11,17 @@ const fetchOrganizationByUser = (userId: string)=>{
      return false;
     }
 }
-
+const createOrganization = (data:any)=>{
+    try {
+        const response = api.post(USER_CREATE_ORGANIZATION,data);
+        return response;
+        
+    } catch (error) {
+        console.log("error", error);
+        return false;
+    }
+}
 export{
-    fetchOrganizationByUser
+    fetchOrganizationByUser,
+    createOrganization
 }

@@ -111,7 +111,7 @@ const MyOrganization: React.FC<MyOrganizationProps> = ({ onBack }) => {
         </p>
 
         <div className="bg-white shadow sm:rounded-lg sm:px-10 px-4 py-8">
-          {error ? (
+          {error && user.organizationId != null ? (
             <div className="text-center">
               <div className="text-red-600 text-sm mb-4">{error}</div>
               <button

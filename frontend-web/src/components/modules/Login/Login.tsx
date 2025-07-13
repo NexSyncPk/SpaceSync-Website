@@ -33,6 +33,8 @@ const Login: React.FC = () => {
         dispatch(loginSuccess(response.data));
         console.log(response, response.data);
         reset();
+        navigate("/");
+        // navigate("/organization");
       }
     } catch (error) {
       const errorMessage =
