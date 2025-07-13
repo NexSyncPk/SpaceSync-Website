@@ -44,6 +44,24 @@ module.exports = (sequelize, DataTypes) => {
                     },
                 },
             },
+            phone: {
+                type: DataTypes.STRING,
+                allowNull: true,
+                validate: {
+                    is: {
+                        args: [/^\+?[1-9]\d{1,14}$/],
+                        msg: "Please enter a valid phone number",
+                    },
+                },
+            },
+            department: {
+                type: DataTypes.STRING,
+                allowNull: true,
+            },
+            position: {
+                type: DataTypes.STRING,
+                allowNull: true,
+            },
             role: {
                 type: DataTypes.ENUM('admin', 'employee', 'unassigned'),
                 allowNull: false,
