@@ -48,7 +48,7 @@ const mockRequirements = [
   { iconComponent: Monitor, resource: "Projector" },
   { iconComponent: PenTool, resource: "Whiteboard" },
   { iconComponent: Tv, resource: "TV Screen" },
-  { iconComponent: Video, resource: "Video conference" },
+  { iconComponent: Video, resource: "Video Conference" },
 ];
 
 interface MeetingRequirementsViewProps {
