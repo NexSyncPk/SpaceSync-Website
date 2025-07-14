@@ -176,6 +176,27 @@ function notifyReservationCancelled(reservation, organizationId) {
   }
 }
 
+// Notify organization when reservation is completed
+function notifyReservationCompleted(reservation, organizationId) {
+  try {
+    if (!io) return;
+    
+    // Notify all users in the organization about reservation completion
+    for (const [userId, clientData] of clients.entries()) {
+      if (clientData.organizationId === organizationId) {
+        io.to(clientData.socketId).emit('reservationCompleted', {
+          type: 'reservation_completed',
+          reservation: reservation,
+          message: `Reservation for ${reservation.Room?.name || 'room'} has been completed`,
+          timestamp: new Date()
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error notifying reservation completion:", error);
+  }
+}
+
 module.exports = { 
   initializeSocket, 
   getIO, 
@@ -185,5 +206,6 @@ module.exports = {
   notifyRoomStatusChange,
   notifyRoomUpdated,
   notifyReservationUpdated,
-  notifyReservationCancelled
+  notifyReservationCancelled,
+  notifyReservationCompleted
 };

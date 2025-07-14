@@ -43,10 +43,10 @@ class ReservationValidator extends BaseValidator {
             }),
         
         status: Joi.string()
-            .valid('pending', 'confirmed', 'cancelled')
+            .valid('pending', 'confirmed', 'cancelled', 'completed')
             .default('pending')
             .messages({
-                'any.only': 'Status must be pending, confirmed, or cancelled'
+                'any.only': 'Status must be pending, confirmed, cancelled, or completed'
             }),
         
         internalAttendees: Joi.array()
@@ -91,6 +91,19 @@ class ReservationValidator extends BaseValidator {
             .default([])
             .messages({
                 'array.base': 'External attendees must be an array'
+            }),
+
+        requiredAmenities: Joi.array()
+            .items(
+                Joi.string()
+                    .valid('displayProjector', 'displayWhiteboard', 'cateringAvailable', 'videoConferenceAvailable')
+                    .messages({
+                        'any.only': 'Invalid amenity. Must be one of: displayProjector, displayWhiteboard, cateringAvailable, videoConferenceAvailable'
+                    })
+            )
+            .default([])
+            .messages({
+                'array.base': 'Required amenities must be an array'
             })
     });
 
@@ -121,9 +134,9 @@ class ReservationValidator extends BaseValidator {
             }),
         
         status: Joi.string()
-            .valid('pending', 'confirmed', 'cancelled')
+            .valid('pending', 'confirmed', 'cancelled', 'completed')
             .messages({
-                'any.only': 'Status must be pending, confirmed, or cancelled'
+                'any.only': 'Status must be pending, confirmed, cancelled, or completed'
             }),
         
         internalAttendees: Joi.array()
@@ -136,6 +149,18 @@ class ReservationValidator extends BaseValidator {
             )
             .messages({
                 'array.base': 'Internal attendees must be an array'
+            }),
+
+        requiredAmenities: Joi.array()
+            .items(
+                Joi.string()
+                    .valid('displayProjector', 'displayWhiteboard', 'cateringAvailable', 'videoConferenceAvailable')
+                    .messages({
+                        'any.only': 'Invalid amenity. Must be one of: displayProjector, displayWhiteboard, cateringAvailable, videoConferenceAvailable'
+                    })
+            )
+            .messages({
+                'array.base': 'Required amenities must be an array'
             })
     }).min(1).messages({
         'object.min': 'At least one field must be provided for update'
@@ -156,9 +181,9 @@ class ReservationValidator extends BaseValidator {
             }),
         
         status: Joi.string()
-            .valid('pending', 'confirmed', 'cancelled')
+            .valid('pending', 'confirmed', 'cancelled', 'completed')
             .messages({
-                'any.only': 'Status must be pending, confirmed, or cancelled'
+                'any.only': 'Status must be pending, confirmed, cancelled, or completed'
             }),
         
         startDate: Joi.date()
