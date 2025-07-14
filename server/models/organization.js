@@ -28,7 +28,7 @@ module.exports = (sequelize, DataTypes) => {
             },
             description: {
                 type: DataTypes.STRING,
-                allowNull: true,
+                allowNull: false,
             },
             inviteKey: {
                 type: DataTypes.STRING,

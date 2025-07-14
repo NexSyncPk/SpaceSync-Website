@@ -137,10 +137,24 @@ router.get("/profile", asyncErrorHandler(UserController.getProfile));
  *             type: object
  *             required:
  *               - name
+ *               - description
  *             properties:
  *               name:
  *                 type: string
- *                 description: Organization name
+ *                 minLength: 2
+ *                 maxLength: 100
+ *                 description: Organization name (2-100 characters)
+ *               description:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 500
+ *                 description: Organization description (required, 1-500 characters)
+ *               inviteKey:
+ *                 type: string
+ *                 minLength: 8
+ *                 maxLength: 50
+ *                 pattern: '^[a-zA-Z0-9]+$'
+ *                 description: Custom invite key (optional, 8-50 alphanumeric characters)
  *     responses:
  *       201:
  *         description: Organization created successfully

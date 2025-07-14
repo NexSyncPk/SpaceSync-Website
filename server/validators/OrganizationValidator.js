@@ -2,7 +2,6 @@ const Joi = require('joi');
 const BaseValidator = require('./BaseValidator');
 
 class OrganizationValidator extends BaseValidator {
-    // Schema for creating organization
     createOrganizationSchema = Joi.object({
         name: Joi.string()
             .min(2)
@@ -13,7 +12,15 @@ class OrganizationValidator extends BaseValidator {
                 'string.min': 'Organization name must be at least 2 characters long',
                 'string.max': 'Organization name cannot exceed 100 characters'
             }),
-        
+        description: Joi.string()
+            .min(1)
+            .max(500)
+            .required()
+            .messages({
+                'string.empty': 'Organization description is required',
+                'string.min': 'Description must be at least 1 character long',
+                'string.max': 'Description cannot exceed 500 characters'
+            }),
         inviteKey: Joi.string()
             .min(8)
             .max(50)
@@ -33,6 +40,15 @@ class OrganizationValidator extends BaseValidator {
             .messages({
                 'string.min': 'Organization name must be at least 2 characters long',
                 'string.max': 'Organization name cannot exceed 100 characters'
+            }),
+        
+        description: Joi.string()
+            .min(1)
+            .max(500)
+            .messages({
+                'string.empty': 'Organization description cannot be empty',
+                'string.min': 'Description must be at least 1 character long',
+                'string.max': 'Description cannot exceed 500 characters'
             }),
         
         inviteKey: Joi.string()

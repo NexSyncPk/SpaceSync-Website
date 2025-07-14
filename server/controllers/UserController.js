@@ -2,6 +2,7 @@ const BaseController = require("./BaseController");
 const UserRepo = require("../repos/UserRepo");
 const OrganizationRepo = require("../repos/OrganizationRepo");
 const UserValidator = require("../validators/UserValidator");
+const OrganizationValidator = require("../validators/OrganizationValidator");
 const jwt = require("jsonwebtoken");
 
 class UserController extends BaseController {
@@ -10,6 +11,7 @@ class UserController extends BaseController {
     this.userRepo = new UserRepo();
     this.organizationRepo = new OrganizationRepo();
     this.userValidator = new UserValidator();
+    this.organizationValidator = new OrganizationValidator();
   }
 
   register = async (req, res, next) => {
@@ -113,18 +115,13 @@ class UserController extends BaseController {
       );
     }
 
-    const { name } = req.body;
-    if (!name || name.trim().length < 2) {
-      return this.failureResponse(
-        "Organization name is required and must be at least 2 characters",
-        next,
-        422
-      );
+    // Use proper validation
+    const validationResult = this.organizationValidator.validateCreateOrganization(req.body);
+    if (!validationResult.success) {
+      return this.failureResponse(validationResult.message[0], next, 400);
     }
 
-    const organization = await this.organizationRepo.createOrganization({
-      name: name.trim(),
-    });
+    const organization = await this.organizationRepo.createOrganization(validationResult.data);
 
     await this.userRepo.joinOrganization(userId, organization.id, "admin");
 
