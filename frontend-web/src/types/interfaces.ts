@@ -1,11 +1,23 @@
 export interface Room {
-  id: number ;
+  id: string;
   name: string;
   capacity: number;
-    time?: string;
-    status?: 'available' | 'booked' ;
-  image: string;
-  resources: string[];
+  time?: string;
+  status?: 'available' | 'booked';
+  image?: string;
+  displayProjector: boolean;
+  displayWhiteboard: boolean;
+  cateringAvailable: boolean;
+  videoConferenceAvailable: boolean;
+  createdAt: string;
+  updatedAt: string;
+  organizationId: string;
+  Organization: {
+    id: string;
+    name: string;
+  };
+  // Computed property for backward compatibility
+  resources?: string[];
 }
 
 export interface Booking {
@@ -19,7 +31,7 @@ export interface Booking {
   numberOfAttendees: number;
   meetingType: 'internal' | 'external';
   requirements: string[];
-  roomId: number;
+  roomId: string; // Changed from number to string
   status: 'pending' | 'approved' | 'completed' | 'cancelled';
   createdBy?: string; // Make this optional since mock data doesn't include it
 }
@@ -80,6 +92,6 @@ export interface MeetingRequestData {
   numberOfAttendees: number;
   meetingType: 'internal' | 'external';
   requirements: string[];
-  roomId: number;
+  roomId: string; // Changed from number to string
   status?: 'pending' | 'approved' | 'completed' | 'cancelled';
 }

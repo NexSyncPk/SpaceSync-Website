@@ -1,4 +1,4 @@
-import { number, z } from 'zod';
+import { z } from 'zod';
 
 // Login validation schema
 export const loginSchema = z.object({
@@ -95,7 +95,7 @@ export const meetingRequestBaseShape = {
     .enum(['internal', 'external'], {
       required_error: 'Please select meeting type',
     }),
-  roomId: z.number({ required_error: 'Room is required' }),
+  roomId: z.string({ required_error: 'Room is required' }).min(1, 'Room is required'),
   requirements: z
     .array(z.string())
     .default([]),
@@ -141,6 +141,50 @@ export const modifyBookingSchema = z.object({
   room: z.string().min(1, "Room is required"),
 });
 
+// Organization creation validation schema
+export const createOrganizationSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Organization name is required')
+    .min(2, 'Organization name must be at least 2 characters long')
+    .max(100, 'Organization name must be less than 100 characters')
+    .regex(/^[a-zA-Z]/, 'Organization name must start with a letter')
+    .regex(/^[a-zA-Z][a-zA-Z0-9\s&.,-]*[a-zA-Z0-9]$|^[a-zA-Z]$/, 'Organization name must start with a letter, can contain letters, numbers, spaces, &, ., commas, and hyphens, but cannot end with special characters')
+    .refine((val) => {
+      // Check if it's not just numbers or special characters
+      return /[a-zA-Z]/.test(val) && !/^\d+$/.test(val.trim()) && !/^[-&.,\s]+$/.test(val.trim());
+    }, 'Organization name must contain at least one letter and cannot be only numbers or special characters')
+    .refine((val) => {
+      // Check for reasonable word count (1-10 words)
+      const words = val.trim().split(/\s+/).filter(word => word.length > 0);
+      return words.length >= 1 && words.length <= 10;
+    }, 'Organization name should contain 1-10 words')
+    .refine((val) => {
+      // Check for consecutive special characters
+      return !/[&.,-]{2,}/.test(val);
+    }, 'Organization name cannot have consecutive special characters')
+  ,
+  description: z
+    .string()
+    .trim()
+    .refine((val) => {
+      // If description is provided, it should be meaningful
+      if (val === '') return true; // Empty is allowed
+      return val.length >= 10;
+    }, 'Description must be at least 10 characters long')
+    .refine((val) => {
+      if (val === '') return true; // Empty is allowed
+      return val.length <= 500;
+    }, 'Description must be less than 500 characters')
+    .refine((val) => {
+      if (val === '') return true; // Empty is allowed
+      // Must contain at least some letters, not just numbers or special chars
+      return /[a-zA-Z]/.test(val) && !/^\d+$/.test(val.trim()) && !/^[^\w\s]+$/.test(val.trim());
+    }, 'Description must contain meaningful text, not just numbers or special characters')
+    .optional()
+    .or(z.literal('')),
+});
+
 
 
 // Type exports
@@ -148,3 +192,4 @@ export type LoginFormData = z.infer<typeof loginSchema>;
 export type SignupFormData = z.infer<typeof signupSchema>;
 export type MeetingRequestFormData = z.infer<typeof meetingRequestSchema>;
 export type ModifyBookingFormData = z.infer<typeof modifyBookingSchema>;
+export type CreateOrganizationFormData = z.infer<typeof createOrganizationSchema>;

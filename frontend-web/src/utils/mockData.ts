@@ -2,34 +2,103 @@ import { meetingRequestSchema } from "@/schema/validationSchemas.js";
 import { Room } from "../types/interfaces.js";
 import { z } from "zod";
 
+// Utility function to transform server room data to include resources array
+export const transformRoomData = (serverRoom: any): Room => {
+  const resources: string[] = [];
+  
+  if (serverRoom.displayProjector) {
+    resources.push("Projector");
+  }
+  if (serverRoom.displayWhiteboard) {
+    resources.push("Whiteboard");
+  }
+  if (serverRoom.videoConferenceAvailable) {
+    resources.push("Video Conference");
+  }
+  if (serverRoom.cateringAvailable) {
+    resources.push("Catering");
+  }
+
+  return {
+    ...serverRoom,
+    resources,
+    // Use a default image if none provided
+    image: serverRoom.image || "https://images.unsplash.com/photo-1497366216548-37526070297c?w=500&h=300&fit=crop"
+  };
+};
+
 export const mockRooms: Room[] = [
   {
-    id: 1,
+    id: "1",
     name: "Conference Room A",
     capacity: 12,
     image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=500&h=300&fit=crop",
+    displayProjector: true,
+    displayWhiteboard: true,
+    cateringAvailable: false,
+    videoConferenceAvailable: true,
+    createdAt: "2025-07-10T19:17:53.090Z",
+    updatedAt: "2025-07-10T19:17:53.090Z",
+    organizationId: "org-1",
+    Organization: {
+      id: "org-1",
+      name: "Default Organization"
+    },
     resources: ["Projector", "Whiteboard", "Video Conference"]
   },
   {
-    id: 2,
+    id: "2",
     name: "Executive Boardroom",
     capacity: 8,
     image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=500&h=300&fit=crop",
-    resources: ["TV Screen", "Video Conference"]
+    displayProjector: false,
+    displayWhiteboard: false,
+    cateringAvailable: false,
+    videoConferenceAvailable: true,
+    createdAt: "2025-07-10T19:17:53.090Z",
+    updatedAt: "2025-07-10T19:17:53.090Z",
+    organizationId: "org-1",
+    Organization: {
+      id: "org-1",
+      name: "Default Organization"
+    },
+    resources: ["Video Conference"]
   },
   {
-    id: 3,
+    id: "3",
     name: "Creative Studio",
     capacity: 6,
     image: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=500&h=300&fit=crop",
+    displayProjector: true,
+    displayWhiteboard: true,
+    cateringAvailable: false,
+    videoConferenceAvailable: false,
+    createdAt: "2025-07-10T19:17:53.090Z",
+    updatedAt: "2025-07-10T19:17:53.090Z",
+    organizationId: "org-1",
+    Organization: {
+      id: "org-1",
+      name: "Default Organization"
+    },
     resources: ["Whiteboard", "Projector"]
   },
   {
-    id: 4,
+    id: "4",
     name: "Small Meeting Room",
     capacity: 4,
     image: "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=500&h=300&fit=crop",
-    resources: ["TV Screen"]
+    displayProjector: false,
+    displayWhiteboard: false,
+    cateringAvailable: false,
+    videoConferenceAvailable: false,
+    createdAt: "2025-07-10T19:17:53.090Z",
+    updatedAt: "2025-07-10T19:17:53.090Z",
+    organizationId: "org-1",
+    Organization: {
+      id: "org-1",
+      name: "Default Organization"
+    },
+    resources: []
   }
 ];
 
@@ -45,7 +114,7 @@ export const pastBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 5,
     meetingType: "internal",
     requirements: ["Projector"],
-    roomId: 1,
+    roomId: "1",
     status: "completed",
   },
   {
@@ -58,8 +127,8 @@ export const pastBookings: z.infer<typeof meetingRequestSchema>[] = [
     endTime: "15:30",
     numberOfAttendees: 8,
     meetingType: "external",
-    requirements: ["TV Screen", "Video Conference"],
-    roomId: 2,
+    requirements: ["Video Conference"],
+    roomId: "2",
     status: "completed",
   },
   {
@@ -73,7 +142,7 @@ export const pastBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 4,
     meetingType: "internal",
     requirements: ["Whiteboard"],
-    roomId: 3,
+    roomId: "3",
     status: "completed",
   },
   {
@@ -87,7 +156,7 @@ export const pastBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 6,
     meetingType: "external",
     requirements: ["Projector", "Video Conference"],
-    roomId: 1,
+    roomId: "1",
     status: "cancelled",
   },
   // Additional past bookings for better testing data
@@ -102,7 +171,7 @@ export const pastBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 3,
     meetingType: "internal",
     requirements: ["Whiteboard"],
-    roomId: 4,
+    roomId: "4",
     status: "completed",
   },
   {
@@ -116,7 +185,7 @@ export const pastBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 7,
     meetingType: "internal",
     requirements: ["Projector", "Whiteboard"],
-    roomId: 1,
+    roomId: "1",
     status: "completed",
   },
   {
@@ -129,8 +198,8 @@ export const pastBookings: z.infer<typeof meetingRequestSchema>[] = [
     endTime: "12:30",
     numberOfAttendees: 5,
     meetingType: "external",
-    requirements: ["Video Conference", "TV Screen"],
-    roomId: 2,
+    requirements: ["Video Conference"],
+    roomId: "2",
     status: "completed",
   },
   {
@@ -144,7 +213,7 @@ export const pastBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 6,
     meetingType: "internal",
     requirements: ["Projector"],
-    roomId: 3,
+    roomId: "3",
     status: "completed",
   },
   {
@@ -158,7 +227,7 @@ export const pastBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 8,
     meetingType: "internal",
     requirements: ["Whiteboard", "Projector"],
-    roomId: 1,
+    roomId: "1",
     status: "completed",
   },
   {
@@ -171,8 +240,8 @@ export const pastBookings: z.infer<typeof meetingRequestSchema>[] = [
     endTime: "17:00",
     numberOfAttendees: 9,
     meetingType: "internal",
-    requirements: ["Whiteboard", "TV Screen"],
-    roomId: 2,
+    requirements: ["Whiteboard"],
+    roomId: "2",
     status: "completed",
   },
   {
@@ -186,7 +255,7 @@ export const pastBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 12,
     meetingType: "internal",
     requirements: ["Projector"],
-    roomId: 1,
+    roomId: "1",
     status: "completed",
   },
   {
@@ -200,7 +269,7 @@ export const pastBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 10,
     meetingType: "internal",
     requirements: ["Projector", "TV Screen"],
-    roomId: 2,
+    roomId: "2",
     status: "completed",
   },
   {
@@ -214,7 +283,7 @@ export const pastBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 6,
     meetingType: "internal",
     requirements: ["Whiteboard"],
-    roomId: 3,
+    roomId: "3",
     status: "completed",
   },
   {
@@ -228,7 +297,7 @@ export const pastBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 15,
     meetingType: "internal",
     requirements: ["TV Screen"],
-    roomId: 1,
+    roomId: "1",
     status: "cancelled",
   },
 ];
@@ -245,7 +314,7 @@ export const upcomingBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 10,
     meetingType: "internal",
     requirements: ["Projector", "Whiteboard"],
-    roomId: 1,
+    roomId: "1",
     status: "pending",
   },
   {
@@ -259,7 +328,7 @@ export const upcomingBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 6,
     meetingType: "external",
     requirements: ["TV Screen"],
-    roomId: 2,
+    roomId: "2",
     status: "pending",
   },
   {
@@ -273,7 +342,7 @@ export const upcomingBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 4,
     meetingType: "internal",
     requirements: ["Whiteboard"],
-    roomId: 3,
+    roomId: "3",
     status: "approved",
   },
   {
@@ -287,7 +356,7 @@ export const upcomingBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 12,
     meetingType: "internal",
     requirements: ["Projector", "Video Conference"],
-    roomId: 1,
+    roomId: "1",
     status: "pending",
   },
   {
@@ -301,7 +370,7 @@ export const upcomingBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 3,
     meetingType: "internal",
     requirements: ["Whiteboard"],
-    roomId: 3,
+    roomId: "3",
     status: "pending",
   },
   // Additional diverse booking requests for testing
@@ -316,7 +385,7 @@ export const upcomingBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 8,
     meetingType: "internal",
     requirements: ["Projector", "Whiteboard"],
-    roomId: 1,
+    roomId: "1",
     status: "pending",
   },
   {
@@ -330,7 +399,7 @@ export const upcomingBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 5,
     meetingType: "internal",
     requirements: ["Projector", "TV Screen", "Video Conference"],
-    roomId: 2,
+    roomId: "2",
     status: "approved",
   },
   {
@@ -344,7 +413,7 @@ export const upcomingBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 4,
     meetingType: "external",
     requirements: ["Video Conference"],
-    roomId: 4,
+    roomId: "4",
     status: "pending",
   },
   {
@@ -358,7 +427,7 @@ export const upcomingBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 6,
     meetingType: "internal",
     requirements: ["Projector", "Whiteboard"],
-    roomId: 3,
+    roomId: "3",
     status: "pending",
   },
   {
@@ -372,125 +441,72 @@ export const upcomingBookings: z.infer<typeof meetingRequestSchema>[] = [
     numberOfAttendees: 8,
     meetingType: "external",
     requirements: ["TV Screen", "Video Conference"],
-    roomId: 2,
+    roomId: "2",
     status: "approved",
   },
-  {
-    id: 15,
-    meetingTitle: "Marketing Campaign Brainstorm",
-    name: "Emma Davis",
-    department: "Marketing",
-    teamAgenda: "Creative session for Q2 campaign ideas",
-    startTime: "14:00",
-    endTime: "15:30",
-    numberOfAttendees: 7,
-    meetingType: "internal",
-    requirements: ["Whiteboard"],
-    roomId: 3,
-    status: "pending",
-  },
-  {
-    id: 16,
-    meetingTitle: "Code Review Session",
-    name: "Ryan Park",
-    department: "Engineering",
-    teamAgenda: "Review pull requests and discuss code quality standards",
-    startTime: "09:30",
-    endTime: "10:30",
-    numberOfAttendees: 5,
-    meetingType: "internal",
-    requirements: ["Projector"],
-    roomId: 4,
-    status: "approved",
-  },
-  {
-    id: 17,
-    meetingTitle: "User Research Workshop",
-    name: "Anna Martinez",
-    department: "UX Research",
-    teamAgenda: "Analyze user feedback and plan usability tests",
-    startTime: "11:30",
-    endTime: "13:00",
-    numberOfAttendees: 6,
-    meetingType: "internal",
-    requirements: ["Whiteboard", "Projector"],
-    roomId: 1,
-    status: "pending",
-  },
-  {
-    id: 18,
-    meetingTitle: "Vendor Evaluation Meeting",
-    name: "Kevin Thompson",
-    department: "Procurement",
-    teamAgenda: "Compare proposals from cloud service providers",
-    startTime: "15:30",
-    endTime: "16:30",
-    numberOfAttendees: 4,
-    meetingType: "external",
-    requirements: ["TV Screen", "Projector"],
-    roomId: 2,
-    status: "pending",
-  },
-  {
-    id: 19,
-    meetingTitle: "Sprint Planning",
-    name: "Rachel Green",
-    department: "Development",
-    teamAgenda: "Plan development tasks for next 2-week sprint",
-    startTime: "09:00",
-    endTime: "11:00",
-    numberOfAttendees: 9,
-    meetingType: "internal",
-    requirements: ["Whiteboard", "Projector"],
-    roomId: 1,
-    status: "approved",
-  },
-  {
-    id: 20,
-    meetingTitle: "Legal Compliance Review",
-    name: "David Wilson",
-    department: "Legal",
-    teamAgenda: "Review new regulations and compliance requirements",
-    startTime: "14:30",
-    endTime: "16:00",
-    numberOfAttendees: 5,
-    meetingType: "internal",
-    requirements: ["Projector"],
-    roomId: 4,
-    status: "pending",
-  },
+
 ];
 
 // Mock data for available rooms - replace with API call later
 export const mockAvailableRooms: Room[] = [
   {
-    id: 1,
+    id: "1",
     name: "Conference Room A",
     time: "10:00 - 11:00 AM",
     capacity: 12,
-    image:
-      "https://images.unsplash.com/photo-1497366216548-37526070297c?w=200&h=200&fit=crop",
+    image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=200&h=200&fit=crop",
     status: "available",
+    displayProjector: true,
+    displayWhiteboard: true,
+    cateringAvailable: false,
+    videoConferenceAvailable: true,
+    createdAt: "2025-07-10T19:17:53.090Z",
+    updatedAt: "2025-07-10T19:17:53.090Z",
+    organizationId: "org-1",
+    Organization: {
+      id: "org-1",
+      name: "Default Organization"
+    },
     resources: ["Projector", "Whiteboard", "Video Conference"],
   },
   {
-    id: 2,
+    id: "2",
     name: "Executive Boardroom",
     time: "2:00 - 3:30 PM",
     capacity: 8,
-    image:
-      "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop",
+    image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop",
     status: "available",
-    resources: ["TV Screen", "Video Conference"],
+    displayProjector: false,
+    displayWhiteboard: false,
+    cateringAvailable: false,
+    videoConferenceAvailable: true,
+    createdAt: "2025-07-10T19:17:53.090Z",
+    updatedAt: "2025-07-10T19:17:53.090Z",
+    organizationId: "org-1",
+    Organization: {
+      id: "org-1",
+      name: "Default Organization"
+    },
+    resources: ["Video Conference"],
   },
   {
-    id: 3,
+    id: "3",
     name: "Creative Studio",
     time: "4:00 - 5:00 PM",
     capacity: 6,
-    image:
-      "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=200&h=200&fit=crop",
+    image: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=200&h=200&fit=crop",
     status: "available",
+    displayProjector: true,
+    displayWhiteboard: true,
+    cateringAvailable: false,
+    videoConferenceAvailable: false,
+    createdAt: "2025-07-10T19:17:53.090Z",
+    updatedAt: "2025-07-10T19:17:53.090Z",
+    organizationId: "org-1",
+    Organization: {
+      id: "org-1",
+      name: "Default Organization"
+    },
     resources: ["Whiteboard", "Projector"],
   },
 ];

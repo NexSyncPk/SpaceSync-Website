@@ -238,7 +238,7 @@ const MyOrganization: React.FC<MyOrganizationProps> = ({ onBack }) => {
 
               {/* Members Section */}
               {userOrganization.Users && userOrganization.Users.length > 0 && (
-                <div className="border border-gray-200 rounded-lg p-6 mb-6">
+                <div className="border border-gray-200 rounded-lg p-6 mb-6 ">
                   <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <svg
                       className="w-5 h-5 mr-2 text-gray-600"
@@ -255,7 +255,7 @@ const MyOrganization: React.FC<MyOrganizationProps> = ({ onBack }) => {
                     </svg>
                     Organization Members ({userOrganization.Users.length})
                   </h4>
-                  <div className="space-y-3">
+                  <div className="space-y-3 h-36 overflow-auto">
                     {userOrganization.Users.map((member: any) => (
                       <div
                         key={member.id}
@@ -310,7 +310,7 @@ const MyOrganization: React.FC<MyOrganizationProps> = ({ onBack }) => {
                     </svg>
                     Available Rooms ({userOrganization.Rooms.length})
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 h-40 overflow-auto">
                     {userOrganization.Rooms.map((room: any) => (
                       <div
                         key={room.id}

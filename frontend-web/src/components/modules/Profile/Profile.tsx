@@ -17,7 +17,7 @@ const Profile: React.FC = () => {
   const user = useSelector((state: any) => state.auth.user);
   console.log(user);
   const organization = useSelector((state: any) => state.organization.current);
-
+  console.log(organization);
   // Format join date from createdAt
   const joinDate = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString("en-US", {
@@ -138,9 +138,9 @@ const Profile: React.FC = () => {
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-500">Industry:</span>
+                      <span className="text-gray-500">Name:</span>
                       <p className="text-gray-700">
-                        {organization.industry || "N/A"}
+                        {organization.name || "N/A"}
                       </p>
                     </div>
                     <div>
@@ -152,7 +152,7 @@ const Profile: React.FC = () => {
                     <div>
                       <span className="text-gray-500">Member Count:</span>
                       <p className="text-gray-700">
-                        {organization.memberCount || 0}
+                        {organization.Users.length || 0}
                       </p>
                     </div>
                     <div>

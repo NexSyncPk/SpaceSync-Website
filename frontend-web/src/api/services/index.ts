@@ -6,5 +6,6 @@ export{
 export{
     fetchOrganizationByUser,
     createOrganization,
+    getAllRooms
 
 } from "./userService"

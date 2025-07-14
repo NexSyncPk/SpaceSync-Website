@@ -7,11 +7,11 @@ import toast from "react-hot-toast";
 import {
   Monitor,
   PenTool,
-  Tv,
   Video,
   CheckCircle,
   Plus,
   Minus,
+  Utensils,
 } from "lucide-react";
 import { useReqAndRoom } from "@/hooks/useReqAndRoom";
 import Rooms from "@/components/shared/Rooms";
@@ -28,7 +28,6 @@ const meetingSchema = z
     startTime: z.string().min(1, "Start time is required"),
     endTime: z.string().min(1, "End time is required"),
     numberOfAttendees: z.number().min(1, "At least 1 attendee required"),
-    meetingType: z.enum(["internal", "external"]),
   })
   .refine(
     (data) => {
@@ -47,7 +46,7 @@ type MeetingFormData = z.infer<typeof meetingSchema>;
 const mockRequirements = [
   { iconComponent: Monitor, resource: "Projector" },
   { iconComponent: PenTool, resource: "Whiteboard" },
-  { iconComponent: Tv, resource: "TV Screen" },
+  { iconComponent: Utensils, resource: "Catering" },
   { iconComponent: Video, resource: "Video Conference" },
 ];
 
@@ -127,14 +126,8 @@ const CreateMeetingForm: React.FC = () => {
       startTime: "",
       endTime: "",
       numberOfAttendees: 1,
-      meetingType: "internal",
     },
   });
-
-  // Local state for meeting type only
-  const [meetingType, setMeetingType] = useState<"internal" | "external">(
-    "internal"
-  );
 
   // Use the custom hook for requirements, attendees, and room selection logic
 
@@ -143,6 +136,7 @@ const CreateMeetingForm: React.FC = () => {
     numberOfAttendees,
     filteredRooms,
     selectedRoom,
+    isLoading,
     handleRequirementToggle,
     handleAttendeesChange,
     handleRoomSelect,
@@ -163,7 +157,7 @@ const CreateMeetingForm: React.FC = () => {
     const meetingData = {
       ...data,
       requirements,
-      selectedRoom,
+      roomId: selectedRoom.id, // Use the room ID instead of the whole room object
     };
 
     console.log("Meeting Data:", meetingData);
@@ -287,7 +281,7 @@ const CreateMeetingForm: React.FC = () => {
       </div>
 
       {/* Meeting Type */}
-      <div>
+      {/* <div>
         <label className="block font-semibold mb-3">Meeting Type *</label>{" "}
         <div className="flex gap-3 flex-col md:flex-row h-fit">
           <button
@@ -324,7 +318,7 @@ const CreateMeetingForm: React.FC = () => {
             {errors.meetingType.message}
           </p>
         )}
-      </div>
+      </div> */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 md:gap-6">
         {/* Name Input */}
@@ -388,8 +382,13 @@ const CreateMeetingForm: React.FC = () => {
           </div>
         )}
 
-        {filteredRooms.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2 text-gray-600">Loading rooms...</span>
+          </div>
+        ) : filteredRooms.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {filteredRooms.map((room) => (
               <Rooms
                 key={room.id}

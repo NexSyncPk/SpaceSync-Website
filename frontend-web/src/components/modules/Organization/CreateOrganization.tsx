@@ -1,50 +1,53 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import toast from "react-hot-toast";
 import { setOrganization } from "../../../store/slices/organizationSlice";
+import { createOrganization } from "@/api/services/userService";
+import {
+  createOrganizationSchema,
+  CreateOrganizationFormData,
+} from "@/schema/validationSchemas";
 
 interface CreateOrganizationProps {
   onBack: () => void;
 }
 
 const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onBack }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    industry: "",
-  });
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<CreateOrganizationFormData>({
+    resolver: zodResolver(createOrganizationSchema),
+    mode: "onBlur",
+  });
+
+  const onSubmit = async (data: CreateOrganizationFormData) => {
     setLoading(true);
 
-    // Mock API call
-    setTimeout(() => {
-      const newOrganization = {
-        id: Date.now().toString(),
-        name: formData.name,
-        description: formData.description,
-        industry: formData.industry,
-        role: "admin" as const,
-        createdAt: new Date().toISOString(),
-        memberCount: 1,
-      };
+    try {
+      console.log("Validated form data:", data);
+      const response = await createOrganization(data);
 
-      dispatch(setOrganization(newOrganization));
+      if (response && response.data) {
+        console.log("Organization created:", response.data);
+        dispatch(setOrganization(response.data));
+        reset();
+        // Optionally navigate or call onBack after success
+      } else {
+        toast.error("Failed to create organization. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error creating organization:", error);
+    } finally {
       setLoading(false);
-    }, 1000);
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    }
   };
 
   return (
@@ -76,23 +79,28 @@ const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onBack }) => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div>
               <label
                 htmlFor="name"
                 className="block text-sm font-medium text-gray-700"
               >
-                Organization Name
+                Organization Name *
               </label>
               <input
                 id="name"
-                name="name"
                 type="text"
-                required
-                value={formData.name}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                {...register("name")}
+                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                  errors.name ? "border-red-300" : "border-gray-300"
+                }`}
+                placeholder="Enter organization name"
               />
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -104,44 +112,52 @@ const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onBack }) => {
               </label>
               <textarea
                 id="description"
-                name="description"
                 rows={3}
-                value={formData.description}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                {...register("description")}
+                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                  errors.description ? "border-red-300" : "border-gray-300"
+                }`}
+                placeholder="Describe your organization (optional)"
               />
-            </div>
-
-            <div>
-              <label
-                htmlFor="industry"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Industry
-              </label>
-              <select
-                id="industry"
-                name="industry"
-                value={formData.industry}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="">Select Industry</option>
-                <option value="technology">Technology</option>
-                <option value="healthcare">Healthcare</option>
-                <option value="finance">Finance</option>
-                <option value="education">Education</option>
-                <option value="retail">Retail</option>
-                <option value="other">Other</option>
-              </select>
+              {errors.description && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.description.message}
+                </p>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              disabled={loading || isSubmitting}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Creating..." : "Create Organization"}
+              {loading || isSubmitting ? (
+                <div className="flex items-center">
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Creating...
+                </div>
+              ) : (
+                "Create Organization"
+              )}
             </button>
           </form>
         </div>

@@ -125,7 +125,7 @@ const Header: React.FC = () => {
 
         {/* Mobile navigation (show/hide) */}
         {mobileMenuOpen && (
-          <div className="md:hidden animate-fade-in-down">
+          <div className="lg:hidden animate-fade-in-down">
             <div className="pt-2 pb-3 space-y-1 bg-primary rounded-b-lg shadow-lg">
               {navItems.map(({ path, icon: Icon, label }) => (
                 <Link

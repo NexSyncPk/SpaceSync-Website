@@ -61,6 +61,7 @@ const ModifyBookingModal: React.FC<ModifyBookingModalProps> = ({
     filteredRooms,
     selectedRoom,
     setSelectedRoom,
+    isLoading,
     handleRequirementToggle,
     handleAttendeesChange,
     handleRoomSelect,

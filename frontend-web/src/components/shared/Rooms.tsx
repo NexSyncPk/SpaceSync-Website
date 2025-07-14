@@ -18,6 +18,8 @@ const getResourceIcon = (resource: string) => {
       return Tv;
     case "video conference":
       return Video;
+    case "catering":
+      return Monitor; // You might want to add a proper catering icon
     default:
       return Monitor;
   }
@@ -36,17 +38,6 @@ const Rooms: React.FC<RoomProps> = ({ room, onSelect, isSelected = false }) => {
 
   return (
     <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 mb-4 overflow-hidden">
-      {/* Room Image */}
-      <div className="w-full h-48 bg-gray-100">
-        <img
-          src={
-            room.image || "https://via.placeholder.com/300x200?text=Room+Image"
-          }
-          alt={room.name}
-          className="w-full h-full object-cover"
-        />
-      </div>
-
       {/* Room Info Section */}
       <div className="p-4">
         {/* Name, Capacity and Select Button Row */}
