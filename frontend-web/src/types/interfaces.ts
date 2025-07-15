@@ -47,6 +47,7 @@ export interface User {
   role?: 'admin' | 'user' | 'manager';
   createdAt?: string;
   updatedAt?: string;
+  organizationId: string;
 }
 
 export interface AuthState {

@@ -5,7 +5,6 @@ import axios, {
 } from "axios";
 import config from "@/config";
 import { getToken } from "@/utils/helpers";
-import { routes } from "@/utils/constants";
 import toast from "react-hot-toast";
 
 // Dispatch function for Redux integration

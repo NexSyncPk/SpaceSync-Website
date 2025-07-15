@@ -1,105 +1,140 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { setOrganization } from "../../../store/slices/organizationSlice";
 import { addNotification } from "../../../store/slices/notificationSlice";
+import { updateUser } from "../../../store/slices/authSlice";
+import toast from "react-hot-toast";
+import {
+  getAllOrganizations,
+  joinOrganization,
+} from "@/api/services/userService";
+import { refreshOrganizationData } from "../../../utils/organizationHelpers";
 
 interface JoinOrganizationProps {
   onBack: () => void;
 }
 
-// Mock organizations data
-const mockOrganizations = [
-  {
-    id: "1",
-    name: "Tech Corp",
-    description: "Leading technology company",
-    industry: "Technology",
-    memberCount: 25,
-    inviteCode: "TECH001",
-  },
-  {
-    id: "2",
-    name: "Health Plus",
-    description: "Healthcare solutions provider",
-    industry: "Healthcare",
-    memberCount: 15,
-    inviteCode: "HEALTH002",
-  },
-  {
-    id: "3",
-    name: "Edu Learn",
-    description: "Educational platform",
-    industry: "Education",
-    memberCount: 30,
-    inviteCode: "EDU003",
-  },
-];
-
 const JoinOrganization: React.FC<JoinOrganizationProps> = ({ onBack }) => {
   const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
+  interface Organization {
+    id: string;
+    name: string;
+    description: string;
+    inviteKey: string;
+    Users: [];
+  }
+
+  const [organizations, setOrganizations] = useState<Organization[] | null>(
+    null
+  );
   const [error, setError] = useState("");
   const dispatch = useDispatch();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Unified function to join organization using invite key
+  const joinOrganizationByInviteKey = async (inviteKey: string) => {
     setLoading(true);
     setError("");
 
-    // Mock API call
-    setTimeout(() => {
-      const organization = mockOrganizations.find(
-        (org) => org.inviteCode === inviteCode
-      );
+    try {
+      const response = await joinOrganization({ inviteKey });
 
-      if (organization) {
+      if (response && response.data) {
+        console.log("Join organization response:", response.data);
+
         const joinedOrganization = {
-          ...organization,
-          role: "member" as const,
+          ...response.data.organization,
+          role: response.data.role || "member",
           joinedAt: new Date().toISOString(),
         };
 
+        // Update organization state
         dispatch(setOrganization(joinedOrganization));
 
-        // Simulate admin notification
+        // Update user's complete profile in auth store
+        dispatch(
+          updateUser({
+            organizationId: response.data.organization.id,
+            role: response.data.role || "member",
+            // Update any other user fields that might come from the response
+            ...(response.data.user && response.data.user),
+          })
+        );
+
+        toast.success(
+          `Successfully joined ${response.data.organization.name}!`
+        );
+
+        // Add notification for joining
         dispatch(
           addNotification({
             id: Date.now().toString(),
             type: "user_joined",
-            message: `A new user has joined ${organization.name}`,
+            message: `You have joined ${response.data.organization.name}`,
             timestamp: new Date().toISOString(),
             read: false,
           })
         );
-      } else {
-        setError("Invalid invite code. Please check and try again.");
-      }
 
+        // Fetch updated organization data with fresh member count and room data
+        await refreshOrganizationData(response.data.organization.id, dispatch);
+
+        // Log the updated states for debugging
+        console.log("Updated organization state:", joinedOrganization);
+        console.log("User updates applied:", {
+          organizationId: response.data.organization.id,
+          role: response.data.role || "member",
+          ...(response.data.user && response.data.user),
+        });
+      } else {
+        setError("Failed to join organization. Please try again.");
+      }
+    } catch (error: any) {
+      console.error("Join organization error:", error);
+      console.error("Error response:", error?.response?.data);
+
+      const errorMessage =
+        error?.response?.data?.message ||
+        "Invalid invite key. Please check and try again.";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
-  const handleJoinById = (orgId: string) => {
-    const organization = mockOrganizations.find((org) => org.id === orgId);
-    if (organization) {
-      const joinedOrganization = {
-        ...organization,
-        role: "member" as const,
-        joinedAt: new Date().toISOString(),
-      };
+  const fetchOrganizations = async () => {
+    try {
+      const response = await getAllOrganizations();
+      if (response) {
+        setOrganizations(response.data);
+        console.log(response.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-      dispatch(setOrganization(joinedOrganization));
+  useEffect(() => {
+    fetchOrganizations();
+  }, []);
 
-      // Simulate admin notification
-      dispatch(
-        addNotification({
-          id: Date.now().toString(),
-          type: "user_joined",
-          message: `A new user has joined ${organization.name}`,
-          timestamp: new Date().toISOString(),
-          read: false,
-        })
-      );
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteCode.trim()) {
+      setError("Please enter an invite code");
+      return;
+    }
+    await joinOrganizationByInviteKey(inviteCode.trim());
+  };
+
+  const handleJoinById = async (orgId: string) => {
+    // Find the organization from the fetched list to get its invite key
+    const organization = organizations?.find((org) => org.id === orgId);
+    if (organization && organization.inviteKey) {
+      await joinOrganizationByInviteKey(organization.inviteKey);
+    } else {
+      toast.error("Organization invite key not found");
     }
   };
 
@@ -175,30 +210,50 @@ const JoinOrganization: React.FC<JoinOrganizationProps> = ({ onBack }) => {
               </div>
             </div>
 
-            <div className="mt-6 space-y-3">
-              {mockOrganizations.map((org) => (
-                <div
-                  key={org.id}
-                  className="border border-gray-200 rounded-md p-4 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => handleJoinById(org.id)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium text-gray-900">
-                        {org.name}
-                      </h3>
-                      <p className="text-sm text-gray-500">{org.description}</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {org.memberCount} members • {org.industry}
-                      </p>
+            {organizations ? (
+              <div className="mt-6 space-y-3">
+                {organizations.length > 0 ? (
+                  organizations.map((org) => (
+                    <div
+                      key={org.id}
+                      className="border border-gray-200 rounded-md p-4 hover:bg-gray-50"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1">
+                          <h3 className="text-sm font-medium text-gray-900">
+                            {org?.name}
+                          </h3>
+                          <p className="text-sm text-gray-500 w-10/12">
+                            {org?.description}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {org?.Users?.length} members
+                          </p>
+                        </div>
+                        <button
+                          className="text-indigo-600 hover:text-indigo-500 text-sm font-medium disabled:opacity-50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleJoinById(org.id);
+                          }}
+                          disabled={loading}
+                        >
+                          {loading ? "Joining..." : "Join"}
+                        </button>
+                      </div>
                     </div>
-                    <button className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-                      Join
-                    </button>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500 py-4">
+                    No organizations available to join
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+              </div>
+            ) : (
+              <div className="mt-6 text-center text-gray-500">
+                <div className="animate-pulse">Loading organizations...</div>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setOrganization } from "../../../store/slices/organizationSlice";
 import { addNotification } from "../../../store/slices/notificationSlice";
+import { updateUser } from "../../../store/slices/authSlice";
 import { fetchOrganizationByUser } from "@/api/services/userService";
 import toast from "react-hot-toast";
+import { refreshOrganizationData } from "../../../utils/organizationHelpers";
 
 interface MyOrganizationProps {
   onBack: () => void;
@@ -39,9 +41,16 @@ const MyOrganization: React.FC<MyOrganizationProps> = ({ onBack }) => {
     }
   };
 
-  const handleJoinMyOrganization = () => {
+  const handleJoinMyOrganization = async () => {
     if (userOrganization) {
       dispatch(setOrganization(userOrganization));
+
+      // Update user's organization ID in auth store
+      dispatch(
+        updateUser({
+          organizationId: userOrganization.id,
+        })
+      );
 
       // Add notification for joining
       dispatch(
@@ -53,6 +62,11 @@ const MyOrganization: React.FC<MyOrganizationProps> = ({ onBack }) => {
           read: false,
         })
       );
+
+      // Fetch updated organization data with fresh member count
+      await refreshOrganizationData(userOrganization.id, dispatch);
+
+      toast.success(`Successfully joined ${userOrganization.name}!`);
     }
   };
 

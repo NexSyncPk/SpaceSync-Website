@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { setOrganization } from "../../../store/slices/organizationSlice";
+import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import CreateOrganization from "./CreateOrganization";
 import JoinOrganization from "./JoinOrganization";
 import MyOrganization from "./MyOrganization";
@@ -9,9 +9,23 @@ const Organization: React.FC = () => {
   const [selectedOption, setSelectedOption] = useState<
     "create" | "join" | "my" | null
   >(null);
-  const dispatch = useDispatch();
   const user = useSelector((store: any) => store.auth);
+  const hasSelectedOrganization = useSelector(
+    (state: any) => state.organization.hasSelectedOrganization
+  );
+  const navigate = useNavigate();
   console.log(user);
+
+  // Safely access user permissions with fallbacks
+  const canCreateOrganization = user.canCreateOrganization ?? true;
+  const canJoinOrganization = user.canJoinOrganization ?? true;
+
+  // If user has selected an organization, redirect to home
+  useEffect(() => {
+    if (hasSelectedOrganization) {
+      navigate("/", { replace: true });
+    }
+  }, [hasSelectedOrganization, navigate]);
 
   const handleBack = () => {
     setSelectedOption(null);
@@ -66,7 +80,7 @@ const Organization: React.FC = () => {
               </span>
             </button>
 
-            {user.canCreateOrganization && (
+            {canCreateOrganization && (
               <button
                 onClick={() => setSelectedOption("create")}
                 className="w-full flex flex-col items-center justify-center px-4 py-6 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -91,7 +105,7 @@ const Organization: React.FC = () => {
               </button>
             )}
 
-            {user.canJoinOrganization && (
+            {canJoinOrganization && (
               <button
                 onClick={() => setSelectedOption("join")}
                 className="w-full flex flex-col items-center justify-center px-4 py-6 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:bg-slate-200  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"

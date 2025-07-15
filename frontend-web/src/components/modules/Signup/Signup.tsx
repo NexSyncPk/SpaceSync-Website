@@ -16,7 +16,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { SignupFormData, signupSchema } from "@/schema/validationSchemas";
-import { setError, setLoading, signupSuccess } from "@/store/slices/authSlice";
+import { setError, setLoading } from "@/store/slices/authSlice";
 import { signup } from "@/api/services/authService";
 
 const Signup: React.FC = () => {
@@ -38,15 +38,17 @@ const Signup: React.FC = () => {
     dispatch(setLoading(true));
 
     try {
-      // Simulate API call - replace with actual API call
-
       const response = await signup(data);
       if (response) {
         console.log(response);
+        // Don't authenticate user immediately after signup
+        // Instead, show success message and redirect to login
+        dispatch(setLoading(false));
+
+        reset();
+        // Navigate to login page
+        navigate("/login");
       }
-      // toast.success("Account created successfully! Welcome to SpaceSync.");
-      reset();
-      navigate("/"); // Redirect to home page
     } catch (error) {
       const errorMessage =
         error instanceof Error

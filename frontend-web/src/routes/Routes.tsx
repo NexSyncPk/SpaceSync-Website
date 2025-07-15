@@ -13,7 +13,7 @@ import AdminDashboard from "@/views/AdminDashboard";
 import RoomManagementView from "@/views/RoomManagementView";
 import BookingManagementView from "@/views/BookingManagementView";
 import UserManagementView from "@/views/UserManagementView";
-import OrganizationView from "@/views/OrganizationView";
+import Organization from "@/components/modules/Organization/Organization";
 
 const Routes = () => {
   return (
@@ -35,6 +35,9 @@ const Routes = () => {
           </PublicRoute>
         }
       />
+
+      {/* Organization Setup Route - for authenticated users without organization */}
+      <Route path="/organization-setup" element={<Organization />} />
 
       {/* Protected User Routes */}
       <Route

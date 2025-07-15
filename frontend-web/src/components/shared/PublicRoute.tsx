@@ -14,13 +14,31 @@ const PublicRoute: React.FC<PublicRouteProps> = ({
   const isAuthenticated = useSelector(
     (state: any) => state.auth.isAuthenticated
   );
+  const isLoading = useSelector((state: any) => state.auth.isLoading);
+  const hasSelectedOrganization = useSelector(
+    (state: any) => state.organization.hasSelectedOrganization
+  );
 
-  // If user is already authenticated, redirect them away from public pages
-  if (isAuthenticated) {
+  // Defensive: If loading, show loading spinner
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  // If authenticated but no organization selected, redirect to organization setup
+  if (isAuthenticated && !hasSelectedOrganization) {
+    return <Navigate to="/organization-setup" replace />;
+  }
+
+  // If authenticated and has organization, redirect to main app
+  if (isAuthenticated && hasSelectedOrganization) {
     return <Navigate to={redirectTo} replace />;
   }
 
-  // If not authenticated, show the public page (login/signup)
+  // Only show children if not authenticated
   return <>{children}</>;
 };
 

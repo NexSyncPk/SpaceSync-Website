@@ -1,22 +1,27 @@
 import { useState, useEffect } from "react";
-import { mockRooms, transformRoomData } from "../utils/mockData";
+import { transformRoomData } from "../utils/mockData";
 import { getAllRooms } from "../api/services/index";
 import { Room } from "../types/interfaces";
+import { useSelector } from "react-redux";
 
 export function useReqAndRoom(initialRequirements: string[] = [], initialAttendees: number = 1, initialRoomId?: string) {
   const [requirements, setRequirements] = useState<string[]>(initialRequirements);
   const [numberOfAttendees, setNumberOfAttendees] = useState<number>(initialAttendees);
-  const [rooms, setRooms] = useState<Room[]>(mockRooms);
-  const [filteredRooms, setFilteredRooms] = useState<Room[]>(mockRooms);
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(
-    initialRoomId ? mockRooms.find((room) => room.id === initialRoomId) || null : null
-  );
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [filteredRooms, setFilteredRooms] = useState<Room[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Get organization state to trigger refresh when it changes
+  const organizationId = useSelector((state: any) => state.auth.user?.organizationId);
+  const organizationState = useSelector((state: any) => state.organization.current);
 
   // Fetch Rooms from API
   const fetchRooms = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const response = await getAllRooms();
       if (response && response.data) {
         console.log("API Response:", response.data);
@@ -24,11 +29,16 @@ export function useReqAndRoom(initialRequirements: string[] = [], initialAttende
         const transformedRooms = response.data.map(transformRoomData);
         setRooms(transformedRooms);
         console.log("Transformed rooms:", transformedRooms);
+      } else {
+        // If no data, set empty array
+        setRooms([]);
+        console.log("No rooms data received from API");
       }
     } catch (error) {
       console.log("Error fetching rooms:", error);
-      // Fallback to mock data
-      setRooms(mockRooms);
+      setError("Failed to load rooms. Please try again.");
+      // Do not fallback to mock data - show empty array
+      setRooms([]);
     } finally {
       setIsLoading(false);
     }
@@ -37,6 +47,14 @@ export function useReqAndRoom(initialRequirements: string[] = [], initialAttende
   useEffect(() => {
     fetchRooms();
   }, []);
+
+  // Refresh rooms when organization changes (user joins/creates organization)
+  useEffect(() => {
+    if (organizationId && organizationState) {
+      console.log("Organization changed, refreshing rooms...");
+      fetchRooms();
+    }
+  }, [organizationId, organizationState?.id]);
 
   // Room filtering logic
   useEffect(() => {
@@ -85,6 +103,7 @@ export function useReqAndRoom(initialRequirements: string[] = [], initialAttende
     selectedRoom,
     setSelectedRoom,
     isLoading,
+    error,
     handleRequirementToggle,
     handleAttendeesChange,
     handleRoomSelect,

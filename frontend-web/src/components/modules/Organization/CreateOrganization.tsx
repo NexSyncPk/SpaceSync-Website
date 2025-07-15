@@ -9,6 +9,8 @@ import {
   createOrganizationSchema,
   CreateOrganizationFormData,
 } from "@/schema/validationSchemas";
+import { updateUser } from "@/store/slices/authSlice";
+import { refreshOrganizationData } from "../../../utils/organizationHelpers";
 
 interface CreateOrganizationProps {
   onBack: () => void;
@@ -38,8 +40,21 @@ const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onBack }) => {
       if (response && response.data) {
         console.log("Organization created:", response.data);
         dispatch(setOrganization(response.data));
+
+        // Update user's organization ID in auth store
+        dispatch(
+          updateUser({
+            organizationId: response.data.id,
+          })
+        );
+
         reset();
-        // Optionally navigate or call onBack after success
+        toast.success("Organization created successfully!");
+
+        // Fetch updated organization data with fresh member count and room data
+        await refreshOrganizationData(response.data.id, dispatch);
+
+        // Navigation will be handled by Organization component's useEffect
       } else {
         toast.error("Failed to create organization. Please try again.");
       }

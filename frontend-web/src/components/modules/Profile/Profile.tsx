@@ -34,7 +34,7 @@ const Profile: React.FC = () => {
     department: user?.department || "N/A",
     position: user?.position || "N/A",
     joinDate: joinDate,
-    role: organization?.role || "member",
+    role: user?.role || "member",
     organization: organization?.name || "N/A",
   };
 
@@ -140,7 +140,7 @@ const Profile: React.FC = () => {
                     <div>
                       <span className="text-gray-500">Name:</span>
                       <p className="text-gray-700">
-                        {organization.name || "N/A"}
+                        {organization?.name || "N/A"}
                       </p>
                     </div>
                     <div>
@@ -152,10 +152,10 @@ const Profile: React.FC = () => {
                     <div>
                       <span className="text-gray-500">Member Count:</span>
                       <p className="text-gray-700">
-                        {organization.Users.length || 0}
+                        {organization?.Users?.length || 0}
                       </p>
                     </div>
-                    <div>
+                    {/* <div>
                       <span className="text-gray-500">Joined:</span>
                       <p className="text-gray-700">
                         {organization.joinedAt
@@ -169,7 +169,7 @@ const Profile: React.FC = () => {
                             )
                           : "N/A"}
                       </p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               )}

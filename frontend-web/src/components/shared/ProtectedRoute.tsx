@@ -1,7 +1,6 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import Organization from "../modules/Organization/Organization";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -19,7 +18,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   );
 
   // Check if we're still loading authentication state
-  const isLoading = useSelector((state: any) => state.auth.loading);
+  const isLoading = useSelector((state: any) => state.auth.isLoading);
 
   // Show loading while checking authentication
   if (isLoading) {
@@ -35,9 +34,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // If authenticated but no organization selected, show organization selection
+  // If authenticated but no organization selected, redirect to organization setup
   if (!hasSelectedOrganization) {
-    return <Organization />;
+    return <Navigate to="/organization-setup" replace />;
   }
 
   // User is authenticated and has selected organization

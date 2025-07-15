@@ -3,14 +3,16 @@ import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import { combineReducers } from '@reduxjs/toolkit';
 import bookingReducer from './slices/bookingSlice.js';
-import authReducer from './slices/authSlice.js';
-import organizationReducer from './slices/organizationSlice.js';
+import authReducer from './slices/authSlice';
+import organizationReducer from './slices/organizationSlice';
 import notificationReducer from './slices/notificationSlice.js';
 // Persist configuration
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['auth', 'booking', 'organization'] // Persist auth and booking state
+  whitelist: ['auth', 'booking', 'organization'], // Persist auth, booking and organization state
+  // Add transformation to handle potential serialization issues
+  transforms: []
 };
 
 // Combine reducers
@@ -38,6 +40,8 @@ export const store = configureStore({
           'persist/REGISTER',
           'persist/FLUSH',
         ],
+        // Add ignoredPaths for any non-serializable data
+        ignoredPaths: ['register'],
       },
     }),
   devTools: true, // Enable Redux DevTools

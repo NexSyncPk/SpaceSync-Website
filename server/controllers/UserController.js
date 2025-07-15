@@ -20,7 +20,8 @@ class UserController extends BaseController {
       return this.failureResponse("Validation failed", next, 422);
     }
 
-    const { name, email, password } = validationResult.data;
+    const { name, email, password, phone, department, position } =
+      validationResult.data;
 
     const existingUser = await this.userRepo.getUserByEmail(email);
     if (existingUser) {
@@ -35,6 +36,9 @@ class UserController extends BaseController {
       name,
       email,
       password,
+      phone,
+      department,
+      position,
       role: "unassigned",
       organizationId: null,
     };
@@ -116,12 +120,15 @@ class UserController extends BaseController {
     }
 
     // Use proper validation
-    const validationResult = this.organizationValidator.validateCreateOrganization(req.body);
+    const validationResult =
+      this.organizationValidator.validateCreateOrganization(req.body);
     if (!validationResult.success) {
       return this.failureResponse(validationResult.message[0], next, 400);
     }
 
-    const organization = await this.organizationRepo.createOrganization(validationResult.data);
+    const organization = await this.organizationRepo.createOrganization(
+      validationResult.data
+    );
 
     await this.userRepo.joinOrganization(userId, organization.id, "admin");
 

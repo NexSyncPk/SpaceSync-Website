@@ -1,4 +1,4 @@
-import { ORGANIZATION_BY_ID, ROOMS, USER_CREATE_ORGANIZATION } from "../endpoints";
+import { ORGANIZATION_BY_ID, ORGANIZATIONS, ROOMS, USER_BY_ID, USER_CREATE_ORGANIZATION, USER_JOIN_ORGANIZATION } from "../endpoints";
 import api from "../interceptor";
 
 const fetchOrganizationByUser = (userId: string)=>{
@@ -11,6 +11,16 @@ const fetchOrganizationByUser = (userId: string)=>{
      return false;
     }
 }
+
+const getUserById = (userId:string)=>{
+    try {
+        const response = api.get(USER_BY_ID(userId));
+        return response;
+    } catch (error) {
+        console.log("Error: ", error);
+        return false;
+    }
+}
 const createOrganization = (data:any)=>{
     try {
         const response = api.post(USER_CREATE_ORGANIZATION, data);
@@ -21,6 +31,25 @@ const createOrganization = (data:any)=>{
     }
 }
 
+const joinOrganization = (data: any)=>{
+    try {
+        const response = api.post(USER_JOIN_ORGANIZATION, data);
+        return response;
+    } catch (error) {
+        console.log("Error: ", error);
+        return false;
+    }
+}
+
+const getAllOrganizations = ()=>{
+    try {
+        const response = api.get(ORGANIZATIONS);
+        return response;
+    } catch (error) {
+        console.log("Error: ",error);
+        return false;
+    }
+}
 
 const getAllRooms = ()=>{
     try {
@@ -34,5 +63,8 @@ const getAllRooms = ()=>{
 export{
     fetchOrganizationByUser,
     createOrganization,
-    getAllRooms
+    getAllRooms,
+    getUserById,
+    getAllOrganizations,
+    joinOrganization
 }

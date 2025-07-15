@@ -36,9 +36,11 @@ const authSlice = createSlice({
     },
 
     // Signup success - same as login
-    signupSuccess: (state, action: PayloadAction<{ user: User; token: string }>) => {
+    signupSuccess: (state, action: PayloadAction<{ user: User; token: string; canCreateOrganization?: boolean; canJoinOrganization?: boolean }>) => {
       state.user = action.payload.user;
       state.token = action.payload.token;
+      state.canCreateOrganization = action.payload.canCreateOrganization ?? true; // Default to true for new users
+      state.canJoinOrganization = action.payload.canJoinOrganization ?? true; // Default to true for new users
       state.isAuthenticated = true;
       state.isLoading = false;
       state.error = null;

@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, LogIn, Mail, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { LoginFormData, loginSchema } from "@/schema/validationSchemas";
 import { loginSuccess, setError, setLoading } from "@/store/slices/authSlice";
@@ -33,8 +32,7 @@ const Login: React.FC = () => {
         dispatch(loginSuccess(response.data));
         console.log(response, response.data);
         reset();
-        navigate("/");
-        // navigate("/organization");
+        // Navigation will be handled automatically by PublicRoute when auth state changes
       }
     } catch (error) {
       const errorMessage =
@@ -42,7 +40,7 @@ const Login: React.FC = () => {
           ? error.message
           : "Login failed. Please try again.";
       dispatch(setError(errorMessage));
-      toast.error(errorMessage);
+      // toast.error(errorMessage);
     }
   };
 

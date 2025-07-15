@@ -62,6 +62,7 @@ const ModifyBookingModal: React.FC<ModifyBookingModalProps> = ({
     selectedRoom,
     setSelectedRoom,
     isLoading,
+    error,
     handleRequirementToggle,
     handleAttendeesChange,
     handleRoomSelect,
@@ -408,7 +409,20 @@ const ModifyBookingModal: React.FC<ModifyBookingModalProps> = ({
                 </p>
               </div>
             )}
-            {filteredRooms.length > 0 ? (
+            {isLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-2 text-gray-600">Loading rooms...</span>
+              </div>
+            ) : error ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
+                <p className="text-red-600 mb-2">{error}</p>
+                <p className="text-sm text-red-400">
+                  Please check your connection and ensure you have joined an
+                  organization
+                </p>
+              </div>
+            ) : filteredRooms.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
                 {filteredRooms.map((room) => (
                   <Rooms
