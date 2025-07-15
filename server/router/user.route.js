@@ -124,6 +124,49 @@ router.get("/profile", asyncErrorHandler(UserController.getProfile));
 
 /**
  * @swagger
+ * /user/current:
+ *   get:
+ *     summary: Get current user profile with fresh data
+ *     description: Retrieve the profile information of the currently authenticated user with fresh data from database
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: Current user profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         user:
+ *                           $ref: '#/components/schemas/User'
+ *                         canCreateOrganization:
+ *                           type: boolean
+ *                           description: Whether the user can create an organization
+ *                         canJoinOrganization:
+ *                           type: boolean
+ *                           description: Whether the user can join an organization
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get("/current", asyncErrorHandler(UserController.getCurrentProfile));
+
+/**
+ * @swagger
  * /user/organization:
  *   post:
  *     summary: Create a new organization

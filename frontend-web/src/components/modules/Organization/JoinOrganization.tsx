@@ -2,13 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { setOrganization } from "../../../store/slices/organizationSlice";
 import { addNotification } from "../../../store/slices/notificationSlice";
-import { updateUser } from "../../../store/slices/authSlice";
 import toast from "react-hot-toast";
 import {
   getAllOrganizations,
-  joinOrganization,
 } from "@/api/services/userService";
 import { refreshOrganizationData } from "../../../utils/organizationHelpers";
+import { useOrganizationOperations } from "@/hooks/useOrganizationOperations";
 
 interface JoinOrganizationProps {
   onBack: () => void;
@@ -17,6 +16,7 @@ interface JoinOrganizationProps {
 const JoinOrganization: React.FC<JoinOrganizationProps> = ({ onBack }) => {
   const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const { handleJoinOrganization, isProcessing } = useOrganizationOperations();
   interface Organization {
     id: string;
     name: string;
@@ -33,73 +33,46 @@ const JoinOrganization: React.FC<JoinOrganizationProps> = ({ onBack }) => {
 
   // Unified function to join organization using invite key
   const joinOrganizationByInviteKey = async (inviteKey: string) => {
-    setLoading(true);
     setError("");
 
     try {
-      const response = await joinOrganization({ inviteKey });
+      const result = await handleJoinOrganization(inviteKey);
 
-      if (response && response.data) {
-        console.log("Join organization response:", response.data);
+      if (result.success && result.data) {
+        console.log("Join organization response:", result.data);
 
         const joinedOrganization = {
-          ...response.data.organization,
-          role: response.data.role || "member",
+          ...result.data.organization,
+          role: result.data.role || "employee",
           joinedAt: new Date().toISOString(),
         };
 
         // Update organization state
         dispatch(setOrganization(joinedOrganization));
 
-        // Update user's complete profile in auth store
-        dispatch(
-          updateUser({
-            organizationId: response.data.organization.id,
-            role: response.data.role || "member",
-            // Update any other user fields that might come from the response
-            ...(response.data.user && response.data.user),
-          })
-        );
-
-        toast.success(
-          `Successfully joined ${response.data.organization.name}!`
-        );
-
         // Add notification for joining
         dispatch(
           addNotification({
             id: Date.now().toString(),
             type: "user_joined",
-            message: `You have joined ${response.data.organization.name}`,
+            message: `You have joined ${result.data.organization.name}`,
             timestamp: new Date().toISOString(),
             read: false,
           })
         );
 
         // Fetch updated organization data with fresh member count and room data
-        await refreshOrganizationData(response.data.organization.id, dispatch);
+        await refreshOrganizationData(result.data.organization.id, dispatch);
 
         // Log the updated states for debugging
         console.log("Updated organization state:", joinedOrganization);
-        console.log("User updates applied:", {
-          organizationId: response.data.organization.id,
-          role: response.data.role || "member",
-          ...(response.data.user && response.data.user),
-        });
       } else {
-        setError("Failed to join organization. Please try again.");
+        setError(result.error || "Failed to join organization. Please try again.");
       }
     } catch (error: any) {
       console.error("Join organization error:", error);
-      console.error("Error response:", error?.response?.data);
-
-      const errorMessage =
-        error?.response?.data?.message ||
-        "Invalid invite key. Please check and try again.";
+      const errorMessage = error?.message || "An unexpected error occurred";
       setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -191,10 +164,10 @@ const JoinOrganization: React.FC<JoinOrganizationProps> = ({ onBack }) => {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={isProcessing || loading}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
-              {loading ? "Joining..." : "Join Organization"}
+              {(isProcessing || loading) ? "Joining..." : "Join Organization"}
             </button>
           </form>
 
@@ -236,9 +209,9 @@ const JoinOrganization: React.FC<JoinOrganizationProps> = ({ onBack }) => {
                             e.stopPropagation();
                             handleJoinById(org.id);
                           }}
-                          disabled={loading}
+                          disabled={isProcessing || loading}
                         >
-                          {loading ? "Joining..." : "Join"}
+                          {(isProcessing || loading) ? "Joining..." : "Join"}
                         </button>
                       </div>
                     </div>

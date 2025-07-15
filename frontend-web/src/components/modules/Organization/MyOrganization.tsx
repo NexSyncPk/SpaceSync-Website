@@ -4,6 +4,7 @@ import { setOrganization } from "../../../store/slices/organizationSlice";
 import { addNotification } from "../../../store/slices/notificationSlice";
 import { updateUser } from "../../../store/slices/authSlice";
 import { fetchOrganizationByUser } from "@/api/services/userService";
+import { useOrganizationOperations } from "@/hooks/useOrganizationOperations";
 import toast from "react-hot-toast";
 import { refreshOrganizationData } from "../../../utils/organizationHelpers";
 
@@ -15,11 +16,16 @@ const MyOrganization: React.FC<MyOrganizationProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [userOrganization, setUserOrganization] = useState<any>(null);
+  const { forceRefreshOrganizationData } = useOrganizationOperations();
   const dispatch = useDispatch();
   const user = useSelector((state: any) => state.auth.user);
   console.log(user);
   useEffect(() => {
     fetchUserOrganization();
+    // Also refresh organization data to ensure we have the latest member count
+    if (user?.organizationId) {
+      forceRefreshOrganizationData(user.organizationId);
+    }
   }, []);
 
   const fetchUserOrganization = async () => {
@@ -27,13 +33,34 @@ const MyOrganization: React.FC<MyOrganizationProps> = ({ onBack }) => {
     setError("");
 
     try {
-      // Mock API response - replace with actual API call
+      console.log("🔍 Fetching organization for user organizationId:", user.organizationId);
+      
+      if (!user.organizationId) {
+        console.log("❌ User has no organizationId");
+        setError("No organization found for user");
+        setUserOrganization(null);
+        return;
+      }
+
       const response = await fetchOrganizationByUser(user.organizationId);
       if (response) {
+        console.log("✅ Fetched organization data:", response.data);
         setUserOrganization(response.data);
-        console.log(response.data);
+        
+        // Enhanced logging for member count debugging
+        if (response.data?.Users) {
+          console.log(`🧑‍🤝‍🧑 Organization "${response.data.name}" has ${response.data.Users.length} members:`, 
+            response.data.Users.map((u: any) => ({ id: u.id, name: u.name, email: u.email, role: u.role }))
+          );
+        } else {
+          console.log("⚠️ No Users array found in organization data");
+        }
+      } else {
+        console.log("❌ No response data received");
+        setError("Failed to fetch organization details");
       }
     } catch (err) {
+      console.error("❌ Error fetching organization:", err);
       setError("Failed to fetch organization details. Please try again.");
       setLoading(false);
     } finally {
@@ -63,8 +90,20 @@ const MyOrganization: React.FC<MyOrganizationProps> = ({ onBack }) => {
         })
       );
 
+      // Add a small delay to ensure database transaction is committed
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Fetch updated organization data with fresh member count
       await refreshOrganizationData(userOrganization.id, dispatch);
+      
+      // Add another small delay before refreshing local data
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Refresh the local organization data to show updated member count
+      await fetchUserOrganization();
+      
+      // Force refresh organization data to ensure everything is up to date
+      await forceRefreshOrganizationData(userOrganization.id);
 
       toast.success(`Successfully joined ${userOrganization.name}!`);
     }
@@ -120,9 +159,27 @@ const MyOrganization: React.FC<MyOrganizationProps> = ({ onBack }) => {
         <h2 className="text-center text-3xl font-extrabold text-gray-900 mb-2">
           My Organization
         </h2>
-        <p className="text-center text-sm text-gray-600 mb-8">
+        <p className="text-center text-sm text-gray-600 mb-4">
           Join your existing organization
         </p>
+        
+        {/* Refresh Button for debugging */}
+        <div className="text-center mb-4">
+          <button
+            onClick={() => {
+              fetchUserOrganization();
+              if (user?.organizationId) {
+                forceRefreshOrganizationData(user.organizationId);
+              }
+            }}
+            className="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+          >
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh Data
+          </button>
+        </div>
 
         <div className="bg-white shadow sm:rounded-lg sm:px-10 px-4 py-8">
           {error && user.organizationId != null ? (

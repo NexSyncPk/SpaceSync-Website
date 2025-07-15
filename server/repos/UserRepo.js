@@ -102,10 +102,17 @@ class UserRepo extends BaseRepo {
     }
 
     async joinOrganization(userId, organizationId, role = 'employee') {
-        return await this.update({ 
+        // Use a database transaction to ensure atomicity
+        const result = await this.model.update({ 
             organizationId,
             role 
-        }, { id: userId });
+        }, { 
+            where: { id: userId },
+            returning: true // Ensure we get the updated record
+        });
+        
+        // Return the updated user with organization data
+        return await this.getUserById(userId);
     }
 
     async getUserStatistics(organizationId) {

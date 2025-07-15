@@ -134,6 +134,18 @@ class UserController extends BaseController {
 
     const updatedUser = await this.userRepo.getUserById(userId);
 
+    // Issue a new JWT token with updated organization information
+    const newToken = jwt.sign(
+      {
+        userId: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        organizationId: updatedUser.organizationId,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
     return this.successResponse(
       res,
       "Organization created successfully. You are now an admin!",
@@ -141,6 +153,7 @@ class UserController extends BaseController {
         organization,
         user: updatedUser,
         inviteKey: organization.inviteKey,
+        token: newToken,
       },
       201
     );
@@ -180,11 +193,39 @@ class UserController extends BaseController {
 
     await this.userRepo.joinOrganization(userId, organization.id, "employee");
 
+    console.log(`🚀 User ${userId} joined organization ${organization.id}`);
+
+    // Get fresh user data with organization details
     const updatedUser = await this.userRepo.getUserById(userId);
+    
+    console.log(`📋 Updated user data:`, {
+      userId: updatedUser.id,
+      organizationId: updatedUser.organizationId,
+      role: updatedUser.role,
+      name: updatedUser.name
+    });
+    
+    // Verify the update was successful
+    if (!updatedUser.organizationId || updatedUser.organizationId !== organization.id) {
+      return this.failureResponse("Failed to join organization. Please try again.", next, 500);
+    }
+
+    // Issue a new JWT token with updated organization information
+    const newToken = jwt.sign(
+      {
+        userId: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        organizationId: updatedUser.organizationId,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
 
     return this.successResponse(res, "Successfully joined organization!", {
       organization,
       user: updatedUser,
+      token: newToken,
     });
   };
 
@@ -231,6 +272,28 @@ class UserController extends BaseController {
       canCreateOrganization: user.role === "unassigned" && !user.organizationId,
       canJoinOrganization: user.role === "unassigned" && !user.organizationId,
     });
+  };
+
+  getCurrentProfile = async (req, res) => {
+    try {
+      // Fetch fresh user data from database
+      const user = await this.userRepo.getUserById(req.user.userId);
+      
+      if (!user) {
+        return this.errorResponse(res, "User not found", {}, 404);
+      }
+
+      // Exclude sensitive information
+      const { password, ...userResponse } = user.toJSON();
+
+      return this.successResponse(res, "Current profile retrieved successfully", {
+        user: userResponse,
+        canCreateOrganization: user.role === "unassigned" && !user.organizationId,
+        canJoinOrganization: user.role === "unassigned" && !user.organizationId,
+      });
+    } catch (error) {
+      return this.errorResponse(res, "Failed to retrieve current profile", error.message, 500);
+    }
   };
 }
 

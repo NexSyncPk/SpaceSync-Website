@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   User,
   Mail,
@@ -7,18 +7,47 @@ import {
   Settings,
   Users,
   Shield,
+  RefreshCw,
 } from "lucide-react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import EditProfileModal from "@/components/modals/EditProfileModal";
 import NotificationBell from "@/components/shared/NotificationBell";
+import { fetchOrganizationByUser } from "@/api/services/userService";
+import { setOrganization } from "@/store/slices/organizationSlice";
 
 const Profile: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const user = useSelector((state: any) => state.auth.user);
-  console.log(user);
   const organization = useSelector((state: any) => state.organization.current);
-  console.log(organization);
-  // Format join date from createdAt
+  const dispatch = useDispatch();
+
+  const refreshOrganizationData = async () => {
+    if (!user?.organizationId) {
+      console.log("❌ No organizationId found for user");
+      return;
+    }
+
+    setIsRefreshing(true);
+    try {
+      console.log("🔄 Refreshing organization data for orgId:", user.organizationId);
+      const response = await fetchOrganizationByUser(user.organizationId);
+      if (response && response.data) {
+        dispatch(setOrganization(response.data));
+      } 
+    } catch (error) {
+      console.error("❌ Error refreshing organization data:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.organizationId) {
+      refreshOrganizationData();
+    }
+  }, [user?.organizationId, user?.id]);
+
   const joinDate = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString("en-US", {
         year: "numeric",
@@ -26,7 +55,6 @@ const Profile: React.FC = () => {
       })
     : "N/A";
 
-  // Fallback data if user is not available
   const userInfo = {
     name: user?.name || "Current User",
     email: user?.email || "user@example.com",
@@ -130,12 +158,24 @@ const Profile: React.FC = () => {
                 </div>
               </div>
 
-              {/* Organization Details */}
               {organization && (
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-semibold text-gray-800 mb-3">
-                    Organization Details
-                  </h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-gray-800">
+                      Organization Details
+                    </h4>
+                    <button
+                      onClick={refreshOrganizationData}
+                      disabled={isRefreshing}
+                      className="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      <RefreshCw 
+                        size={14} 
+                        className={`mr-1 ${isRefreshing ? 'animate-spin' : ''}`} 
+                      />
+                      {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                    </button>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-500">Name:</span>
@@ -151,7 +191,7 @@ const Profile: React.FC = () => {
                     </div>
                     <div>
                       <span className="text-gray-500">Member Count:</span>
-                      <p className="text-gray-700">
+                      <p className="text-gray-700 font-semibold">
                         {organization?.Users?.length || 0}
                       </p>
                     </div>
