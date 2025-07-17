@@ -65,7 +65,6 @@ class UserValidator extends BaseValidator {
     }),
   });
 
-  // Schema for updating user
   updateUserSchema = Joi.object({
     name: Joi.string().min(2).max(100).messages({
       "string.min": "Name must be at least 2 characters long",
@@ -74,6 +73,26 @@ class UserValidator extends BaseValidator {
 
     email: Joi.string().email().messages({
       "string.email": "Please enter a valid email address",
+    }),
+
+    phone: Joi.string()
+      .pattern(/^(03|021)\d{9}$/)
+      .length(11)
+      .allow(null, "")
+      .messages({
+        "string.pattern.base":
+          "Phone number must start with 03 or 021 and be 11 digits long",
+        "string.length": "Phone number must be exactly 11 digits",
+      }),
+
+    department: Joi.string().min(2).max(100).allow(null, "").messages({
+      "string.min": "Department must be at least 2 characters long",
+      "string.max": "Department cannot exceed 100 characters",
+    }),
+
+    position: Joi.string().min(2).max(100).allow(null, "").messages({
+      "string.min": "Position must be at least 2 characters long",
+      "string.max": "Position cannot exceed 100 characters",
     }),
 
     role: Joi.string().valid("admin", "employee", "unassigned").messages({
@@ -101,6 +120,7 @@ class UserValidator extends BaseValidator {
   validateCreateUser = (data) => this.validate(this.createUserSchema, data);
   validateLoginUser = (data) => this.validate(this.loginUserSchema, data);
   validateUpdateUser = (data) => this.validate(this.updateUserSchema, data);
+  validateUpdateProfile = (data) => this.validate(this.updateUserSchema, data);
   validateChangePassword = (data) =>
     this.validate(this.changePasswordSchema, data);
 }

@@ -14,15 +14,16 @@ class RoomController extends BaseController {
 
     getAllRooms = async (request, response, next) => {
         const organizationId = request.user.organizationId;
-        const { capacity, displayProjector, displayWhiteboard, cateringAvailable, videoConferenceAvailable } = request.query;
+        const { isActive, displayProjector, displayWhiteboard, cateringAvailable, videoConferenceAvailable, minCapacity } = request.query;
 
-        // Build filters
         const filters = {};
-        if (capacity) filters.capacity = { [require("sequelize").Op.gte]: parseInt(capacity) };
         if (displayProjector === 'true') filters.displayProjector = true;
         if (displayWhiteboard === 'true') filters.displayWhiteboard = true;
         if (cateringAvailable === 'true') filters.cateringAvailable = true;
         if (videoConferenceAvailable === 'true') filters.videoConferenceAvailable = true;
+        if (minCapacity) filters.minCapacity = minCapacity;
+        if (isActive === 'true') filters.isActive = true;
+        if (isActive === 'false') filters.isActive = false;
 
         const rooms = await this.roomRepo.getAllRooms(organizationId, filters);
         return this.successResponse(response, "Rooms retrieved successfully!", rooms);
@@ -36,6 +37,10 @@ class RoomController extends BaseController {
         if (!room) {
             return this.failureResponse("Room not found!", next, 404);
         }
+        
+        if (!room.isActive) {
+            return this.failureResponse("Room is not active!", next, 403);
+        }
 
         return this.successResponse(response, "Room retrieved successfully!", room);
     }
@@ -43,7 +48,6 @@ class RoomController extends BaseController {
     createRoom = async (request, response, next) => {
         const organizationId = request.user.organizationId;
 
-        // Only admins can create rooms
         if (request.user.role !== 'admin') {
             return this.failureResponse("Only administrators can create rooms!", next, 403);
         }
@@ -122,9 +126,27 @@ class RoomController extends BaseController {
         return this.successResponse(response, "Room deleted successfully!");
     }
 
+    toggleRoomStatus = async (request, response, next) => {
+        const { roomId } = request.params;
+        const organizationId = request.user.organizationId;
+        if (request.user.role !== 'admin') {
+            return this.failureResponse("Only administrators can toggle room status!", next, 403);
+        }
+        const room = await this.roomRepo.toggleRoomStatus(roomId, organizationId);
+        if (!room) {
+            return this.failureResponse("Room not found!", next, 404);
+        }
+        try {
+            notifyRoomUpdated(room, organizationId);
+        } catch (socketError) {
+            console.warn("Failed to send real-time notification:", socketError);
+        }
+        return this.successResponse(response, "Room status toggled successfully!", room);
+    }
+
     searchRooms = async (request, response, next) => {
         const organizationId = request.user.organizationId;
-        const { minCapacity, displayProjector, displayWhiteboard, cateringAvailable, videoConferenceAvailable } = request.query;
+        const { displayProjector, displayWhiteboard, cateringAvailable, videoConferenceAvailable } = request.query;
 
         const validationResult = this.roomValidator.validateSearchRooms(request.query);
         if (!validationResult.success) {

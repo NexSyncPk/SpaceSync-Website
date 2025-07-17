@@ -245,6 +245,16 @@ class UserController extends BaseController {
     return this.successResponse(res, "User retrieved successfully", user);
   };
 
+  updateProfile = async (req, res, next) => {
+    const { userId } = req.user;
+    const validationResult = this.userValidator.validateUpdateProfile(req.body);
+    if (!validationResult.success) {
+      return this.failureResponse("Validation failed", next, 422);
+    }
+    const user = await this.userRepo.updateProfile(userId, validationResult.data);
+    return this.successResponse(res, "Profile updated successfully", user);
+  }
+
   updateUser = async (req, res, next) => {
     const { userId } = req.params;
     const requestingUser = req.user;

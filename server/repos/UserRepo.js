@@ -66,6 +66,11 @@ class UserRepo extends BaseRepo {
         return await this.getUserById(id);
     }
 
+    async updateProfile(userId, profileData) {
+        await this.update(profileData, { id: userId });
+        return await this.getUserById(userId);
+    }
+
     async comparePassword(plainPassword, hashedPassword) {
         return await bcrypt.compare(plainPassword, hashedPassword);
     }

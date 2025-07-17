@@ -357,6 +357,42 @@ router.delete("/:roomId", asyncErrorHandler(roomController.deleteRoom.bind(roomC
 
 /**
  * @swagger
+ * /rooms/{roomId}/status:
+ *   patch:
+ *     summary: Toggle room status
+ *     description: Toggle the active status of a room (active/inactive). Admin role required.
+ *     tags: [Rooms]
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Room ID
+ *     responses:
+ *       200:
+ *         description: Room status toggled successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Room'
+ *       403:
+ *         description: Forbidden - Admin role required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.patch("/:roomId/status", asyncErrorHandler(roomController.toggleRoomStatus.bind(roomController)));
+
+/**
+ * @swagger
  * /rooms/{roomId}/availability:
  *   get:
  *     summary: Get room availability
