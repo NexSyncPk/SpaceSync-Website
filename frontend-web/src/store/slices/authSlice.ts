@@ -74,6 +74,22 @@ const authSlice = createSlice({
         state.user = { ...state.user, ...action.payload };
       }
     },
+
+    // Update token and user data (for JWT refresh)
+    updateAuthData: (state, action: PayloadAction<{ user?: User; token?: string; canCreateOrganization?: boolean; canJoinOrganization?: boolean }>) => {
+      if (action.payload.user) {
+        state.user = action.payload.user;
+      }
+      if (action.payload.token) {
+        state.token = action.payload.token;
+      }
+      if (action.payload.canCreateOrganization !== undefined) {
+        state.canCreateOrganization = action.payload.canCreateOrganization;
+      }
+      if (action.payload.canJoinOrganization !== undefined) {
+        state.canJoinOrganization = action.payload.canJoinOrganization;
+      }
+    },
   },
 });
 
@@ -85,6 +101,7 @@ export const {
   clearError,
   logout,
   updateUser,
+  updateAuthData,
 } = authSlice.actions;
 
 export default authSlice.reducer;

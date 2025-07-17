@@ -42,11 +42,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       href: "/admin/users",
       icon: Users,
     },
-    {
-      name: "Analytics",
-      href: "/admin/analytics",
-      icon: BarChart3,
-    },
   ];
 
   return (

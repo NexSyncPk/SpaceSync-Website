@@ -1,15 +1,28 @@
-import ModifyBookingModal from "@/components/modals/ModifyBookingModal";
-import { deleteBooking } from "@/store/slices/bookingSlice";
-import { Booking } from "@/types/interfaces";
-import { getStatusColor, getStatusTextColor } from "@/utils/helpers";
-import { mockRooms } from "@/utils/mockData";
-import { Edit, Trash2 } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
+import { Reservation, cancelReservation } from "../../../../api/services/bookingService";
+import { deleteBooking } from "../../../../store/slices/bookingSlice";
+import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
-import { useDispatch, useSelector } from "react-redux";
+import EditBookingModal from "./../EditBookingModal";
+import DeleteBookingModal from "../DeleteBookingModal";
+
+const getStatusStyles = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'confirmed':
+      return 'bg-green-100 text-green-800';
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'cancelled':
+      return 'bg-red-100 text-red-800';
+    case 'completed':
+      return 'bg-blue-100 text-blue-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
 
 interface BookingCardProps {
-  booking: any;
+  booking: Reservation;
   showActions?: boolean;
 }
 
@@ -17,151 +30,125 @@ const BookingCard: React.FC<BookingCardProps> = ({
   booking,
   showActions = false,
 }) => {
-  const upcomingBookings = useSelector(
-    (state: any) => state.booking.upcomingBookings
-  );
-
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const dispatch = useDispatch();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const handleModify = (bookingId: number) => {
-    const booking = upcomingBookings.find((b: Booking) => b.id === bookingId);
-    if (booking) {
-      setSelectedBooking(booking);
-      setIsModalOpen(true);
+  const handleDelete = async (bookingId: string) => {
+    setDeleteLoading(true);
+    try {
+      await cancelReservation(bookingId);
+      dispatch(deleteBooking(bookingId));
+      toast.success("Booking deleted successfully!");
+      setIsDeleteModalOpen(false);
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to delete booking");
+    } finally {
+      setDeleteLoading(false);
     }
+  } 
+
+  const handleEdit = () => {
+    setIsEditModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedBooking(null);
+  const formatTime = (dateTime: string) => {
+    return new Date(dateTime).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
   };
 
-  const handleDelete = (bookingId: number) => {
-    console.log(`Delete booking ${bookingId}`);
-
-    // Create a promise-based confirmation toast
-    toast(
-      (t) => (
-        <div className="flex flex-col gap-2">
-          <span>Are you sure you want to delete this booking?</span>
-          <div className="flex gap-2 justify-end">
-            <button
-              onClick={() => {
-                toast.dismiss(t.id);
-              }}
-              className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => {
-                dispatch(deleteBooking(bookingId));
-                toast.dismiss(t.id);
-                toast.success("Booking deleted successfully!");
-              }}
-              className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      ),
-      {
-        duration: Infinity,
-        style: {
-          maxWidth: "400px",
-        },
-      }
-    );
+  const formatDate = (dateTime: string) => {
+    return new Date(dateTime).toLocaleDateString();
   };
 
-  const room = mockRooms.find((r: any) => r.id === booking.roomId);
   return (
-    <div
-      key={booking.id}
-      className="bg-white shadow-sm rounded-lg my-3 p-4 border border-gray-200"
-    >
-      <div className="flex justify-between items-start">
-        {/* Booking Info */}
-        <div className="flex-1 mr-3">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {booking.meetingTitle}
+    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+            {booking.title || 'Untitled Meeting'}
           </h3>
-          <p>
-            <span className="font-medium ">Agenda:</span> {booking.teamAgenda}
-          </p>
-          <p className="text-gray-600 text-sm ">
-            Attendees: {booking.numberOfAttendees}
-          </p>
-          <p className="text-gray-600 text-sm ">{booking.meetingType}</p>
-          <p className="text-sm text-gray-600">
-            {booking.startTime} - {booking.endTime}
-          </p>
-          {booking.requirements && booking.requirements.length > 0 && (
-            <div className="mt-2">
-              <span className="font-medium">Requirements:</span>
-              <ul className="list-disc list-inside text-sm text-gray-600">
-                {booking.requirements.map(
-                  (requirement: string, index: number) => (
-                    <li key={index}>{requirement}</li>
-                  )
-                )}
-              </ul>
-            </div>
-          )}
-          <p className="text-sm text-gray-600">
-            Room: {room ? room.name : "Unknown"}
+          <p className="text-sm text-gray-600 mb-2">
+            Room: {booking.room?.name || 'Unknown Room'}
           </p>
         </div>
-
-        {/* Status Badge */}
-        <div
-          className={`px-3 py-1 rounded-full border ${getStatusColor(
-            booking.status
-          )}`}
-        >
-          <span
-            className={`text-xs font-medium capitalize ${getStatusTextColor(
-              booking.status
-            )}`}
-          >
-            {booking.status}
+        <div className="flex flex-col items-end">
+          <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusStyles(booking.status)}`}>
+            {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
           </span>
         </div>
       </div>
 
-      {/* Action Buttons for Pending Bookings */}
-      {showActions && booking.status === "pending" && (
-        <div className="flex justify-end mt-3 gap-x-2">
-          <button
-            onClick={() => handleModify(booking.id)}
-            className="flex items-center bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors"
-          >
-            <Edit size={16} className="text-blue-600" />
-            <span className="text-blue-700 text-sm font-medium ml-1">
-              Modify
+      <div className="space-y-2 text-sm text-gray-600">
+        <div className="flex justify-between">
+          <span>Date:</span>
+          <span className="font-medium">{formatDate(booking.startTime)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Time:</span>
+          <span className="font-medium">
+            {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+          </span>
+        </div>
+        {booking.agenda && (
+          <div className="flex justify-between">
+            <span>Agenda:</span>
+            <span className="font-medium text-right max-w-48 truncate">
+              {booking.agenda}
             </span>
-          </button>
+          </div>
+        )}
+        <div className="flex justify-between">
+          <span>Organizer:</span>
+          <span className="font-medium">
+            {booking.user?.firstName} {booking.user?.lastName}
+          </span>
+        </div>
+        {booking.internalAttendees && booking.internalAttendees.length > 0 && (
+          <div className="flex justify-between">
+            <span>Attendees:</span>
+            <span className="font-medium">{booking.internalAttendees.length}</span>
+          </div>
+        )}
+      </div>
 
+      {showActions && (
+        <div className="flex justify-end space-x-2 mt-4 pt-3 border-t border-gray-100">
           <button
-            onClick={() => handleDelete(booking.id)}
-            className="flex items-center bg-red-50 border border-red-200 px-3 py-2 rounded-lg hover:bg-red-100 transition-colors"
+            onClick={handleEdit}
+            className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
           >
-            <Trash2 size={16} className="text-red-600" />
-            <span className="text-red-700 text-sm font-medium ml-1">
-              Delete
-            </span>
+            Edit
+          </button>
+          <button
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+          >
+            Delete
           </button>
         </div>
       )}
-      {/* Modify Booking Modal */}
-      <ModifyBookingModal
-        booking={selectedBooking}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-      />
+
+      {/* Edit Booking Modal */}
+      {isEditModalOpen && (
+        <EditBookingModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          booking={booking}
+        />
+      )}
+      {/* Delete Booking Modal */}
+      {isDeleteModalOpen && (
+        <DeleteBookingModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={() => handleDelete(booking.id)}
+          loading={deleteLoading}
+        />
+      )}
     </div>
   );
 };

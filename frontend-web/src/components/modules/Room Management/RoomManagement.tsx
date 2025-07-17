@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Plus,
   Edit,
@@ -21,6 +21,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
 import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
+import { getAllRooms } from "@/api/services/userService";
 
 // Room validation schema
 const roomSchema = z.object({
@@ -113,6 +114,20 @@ const RoomManagement: React.FC = () => {
       description: "",
     },
   });
+
+  const fetchAllRooms = async () => {
+    try {
+      const response = await getAllRooms();
+      if (response) {
+        console.log(response);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  useEffect(() => {
+    fetchAllRooms();
+  }, []);
 
   const filteredRooms = rooms.filter((room) => {
     const matchesSearch =

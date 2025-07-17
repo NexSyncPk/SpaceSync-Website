@@ -108,7 +108,7 @@ const Organization: React.FC = () => {
             {canJoinOrganization && (
               <button
                 onClick={() => setSelectedOption("join")}
-                className="w-full flex flex-col items-center justify-center px-4 py-6 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:bg-slate-200  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="w-full flex flex-col items-center justify-center px-4 py-6 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 <svg
                   className="w-8 h-8 mb-2"

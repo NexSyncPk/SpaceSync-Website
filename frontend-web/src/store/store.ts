@@ -2,10 +2,10 @@ import { configureStore } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import { combineReducers } from '@reduxjs/toolkit';
-import bookingReducer from './slices/bookingSlice.js';
+import bookingReducer from './slices/bookingSlice';
 import authReducer from './slices/authSlice';
 import organizationReducer from './slices/organizationSlice';
-import notificationReducer from './slices/notificationSlice.js';
+import notificationReducer from './slices/notificationSlice';
 // Persist configuration
 const persistConfig = {
   key: 'root',

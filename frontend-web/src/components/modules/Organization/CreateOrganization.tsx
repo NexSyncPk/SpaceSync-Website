@@ -4,13 +4,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
 import { setOrganization } from "../../../store/slices/organizationSlice";
-import { createOrganization } from "@/api/services/userService";
 import {
   createOrganizationSchema,
   CreateOrganizationFormData,
 } from "@/schema/validationSchemas";
-import { updateUser } from "@/store/slices/authSlice";
 import { refreshOrganizationData } from "../../../utils/organizationHelpers";
+import { useOrganizationOperations } from "@/hooks/useOrganizationOperations";
 
 interface CreateOrganizationProps {
   onBack: () => void;
@@ -19,6 +18,7 @@ interface CreateOrganizationProps {
 const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
+  const { handleCreateOrganization, isProcessing } = useOrganizationOperations();
 
   const {
     register,
@@ -31,37 +31,23 @@ const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onBack }) => {
   });
 
   const onSubmit = async (data: CreateOrganizationFormData) => {
-    setLoading(true);
-
     try {
       console.log("Validated form data:", data);
-      const response = await createOrganization(data);
+      const result = await handleCreateOrganization(data);
 
-      if (response && response.data) {
-        console.log("Organization created:", response.data);
-        dispatch(setOrganization(response.data));
-
-        // Update user's organization ID in auth store
-        dispatch(
-          updateUser({
-            organizationId: response.data.id,
-          })
-        );
+      if (result.success && result.data) {
+        console.log("Organization created:", result.data);
+        dispatch(setOrganization(result.data.organization));
 
         reset();
-        toast.success("Organization created successfully!");
 
         // Fetch updated organization data with fresh member count and room data
-        await refreshOrganizationData(response.data.id, dispatch);
+        await refreshOrganizationData(result.data.organization.id, dispatch);
 
         // Navigation will be handled by Organization component's useEffect
-      } else {
-        toast.error("Failed to create organization. Please try again.");
       }
     } catch (error) {
       console.error("Error creating organization:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -143,10 +129,10 @@ const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onBack }) => {
 
             <button
               type="submit"
-              disabled={loading || isSubmitting}
+              disabled={isProcessing || loading || isSubmitting}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading || isSubmitting ? (
+              {(isProcessing || loading || isSubmitting) ? (
                 <div className="flex items-center">
                   <svg
                     className="animate-spin -ml-1 mr-3 h-4 w-4 text-white"

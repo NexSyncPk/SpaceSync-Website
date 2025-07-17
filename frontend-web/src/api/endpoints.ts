@@ -16,6 +16,7 @@ export const USER_LOGIN = "/user/login";
 
 // User profile and management
 export const USER_PROFILE = "/user/profile";
+export const USER_CURRENT_PROFILE = "/user/current";
 export const USER_BY_ID = (userId: string) => `/user/${userId}`;
 export const USER_UPDATE = (userId: string) => `/user/${userId}`;
 

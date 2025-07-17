@@ -16,21 +16,25 @@ import {
 } from "lucide-react";
 import { useReqAndRoom } from "@/hooks/useReqAndRoom";
 import Rooms from "@/components/shared/Rooms";
-import { getOrganizationMembers } from "@/api/services/index";
 import { User } from "@/types/interfaces";
+import {
+  createReservation,
+  getOrganizationMemebers,
+} from "@/api/services/index";
 // import { useDispatch, useSelector } from "../store/hooks.js";
 // import { setSelectedRoom } from "../store/slices/bookingSlice.js";
 
 // Zod validation schema
 const meetingSchema = z
   .object({
-    meetingTitle: z.string().min(1, "Meeting title is required"),
-    name: z.string().min(1, "Name is required"),
-    department: z.string().min(1, "Department is required"),
+    title: z.string().min(1, "Meeting title is required"),
+    // name: z.string().min(1, "Name is required"),
+    // department: z.string().min(1, "Department is required"),
     teamAgenda: z.string().min(1, "Team agenda is required"),
+    meetingDate: z.string().min(1, "Meeting date is required"),
     startTime: z.string().min(1, "Start time is required"),
     endTime: z.string().min(1, "End time is required"),
-    selectedMembers: z
+    internalAttendees: z
       .array(
         z.object({
           id: z.string(),
@@ -44,23 +48,51 @@ const meetingSchema = z
   })
   .refine(
     (data) => {
-      const start = new Date(`1970-01-01T${data.startTime}:00`);
-      const end = new Date(`1970-01-01T${data.endTime}:00`);
+      const start = new Date(`${data.meetingDate}T${data.startTime}:00`);
+      const end = new Date(`${data.meetingDate}T${data.endTime}:00`);
       return end > start;
     },
     {
       message: "End time must be after start time",
       path: ["endTime"],
     }
+  )
+  .refine(
+    (data) => {
+      const meetingDate = new Date(data.meetingDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day for comparison
+      return meetingDate >= today;
+    },
+    {
+      message: "Meeting date cannot be in the past",
+      path: ["meetingDate"],
+    }
   );
 
 type MeetingFormData = z.infer<typeof meetingSchema>;
 
 const mockRequirements = [
-  { iconComponent: Monitor, resource: "Projector" },
-  { iconComponent: PenTool, resource: "Whiteboard" },
-  { iconComponent: Utensils, resource: "Catering" },
-  { iconComponent: Video, resource: "Video Conference" },
+  {
+    iconComponent: Monitor,
+    resource: "Projector",
+    backendKey: "displayProjector",
+  },
+  {
+    iconComponent: PenTool,
+    resource: "Whiteboard",
+    backendKey: "displayWhiteboard",
+  },
+  {
+    iconComponent: Utensils,
+    resource: "Catering",
+    backendKey: "cateringAvailable",
+  },
+  {
+    iconComponent: Video,
+    resource: "Video Conference",
+    backendKey: "videoConferenceAvailable",
+  },
 ];
 
 interface MeetingRequirementsViewProps {
@@ -125,7 +157,7 @@ const CreateMeetingForm: React.FC = () => {
   const [orgMembers, setOrgMembers] = useState<User[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [showMemberDropdown, setShowMemberDropdown] = useState(false);
-  const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
+  const [internalAttendees, setInternalAttendees] = useState<User[]>([]);
 
   // Get organization info from Redux
   const organization = useSelector((state: any) => state.organization.current);
@@ -139,15 +171,15 @@ const CreateMeetingForm: React.FC = () => {
     formState: { errors, isSubmitting },
   } = useForm<MeetingFormData>({
     resolver: zodResolver(meetingSchema),
-    mode: "onSubmit", // Only validate on submit, not on change/blur
     defaultValues: {
-      meetingTitle: "",
-      name: "",
-      department: "",
+      title: "",
+      // name: "",
+      // department: "",
       teamAgenda: "",
+      meetingDate: "",
       startTime: "",
       endTime: "",
-      selectedMembers: [],
+      internalAttendees: [],
     },
   });
 
@@ -160,16 +192,25 @@ const CreateMeetingForm: React.FC = () => {
     error,
     handleRequirementToggle,
     handleRoomSelect,
-  } = useReqAndRoom([], selectedMembers.length || 1);
+    handleAttendeesChange,
+  } = useReqAndRoom([], internalAttendees.length || 1);
+
+  // Update attendee count when selected members change
+  useEffect(() => {
+    const attendeeCount = internalAttendees.length || 1;
+    handleAttendeesChange(attendeeCount);
+  }, [internalAttendees.length, handleAttendeesChange]);
 
   // Fetch organization members when component mounts
   useEffect(() => {
     const fetchMembers = async () => {
-      if (!organization?.id) return;
+      if (!organization?.id) {
+        return;
+      }
 
       setLoadingMembers(true);
       try {
-        const response = await getOrganizationMembers(organization.id);
+        const response = await getOrganizationMemebers(organization.id);
         if (response && response.data) {
           setOrgMembers(response.data);
         }
@@ -194,56 +235,82 @@ const CreateMeetingForm: React.FC = () => {
 
   // Update form when selected members change
   useEffect(() => {
-    const formattedMembers = selectedMembers.map(convertUserToFormFormat);
-    setValue("selectedMembers", formattedMembers);
-  }, [selectedMembers, setValue]);
+    const formattedMembers = internalAttendees.map(convertUserToFormFormat);
+    setValue("internalAttendees", formattedMembers);
+  }, [internalAttendees, setValue]);
 
   // Handle member selection
   const handleMemberSelect = (member: User) => {
-    const isAlreadySelected = selectedMembers.some((m) => m.id === member.id);
+    const isAlreadySelected = internalAttendees.some((m) => m.id === member.id);
 
     if (isAlreadySelected) {
-      setSelectedMembers((prev) => prev.filter((m) => m.id !== member.id));
+      setInternalAttendees((prev) => prev.filter((m) => m.id !== member.id));
     } else {
-      if (selectedMembers.length >= 20) {
+      if (internalAttendees.length >= 20) {
         toast.error("Maximum 20 members can be selected");
         return;
       }
-      setSelectedMembers((prev) => [...prev, member]);
+      setInternalAttendees((prev) => [...prev, member]);
     }
   };
 
   // Remove selected member
   const removeMember = (memberId: string | number) => {
-    setSelectedMembers((prev) => prev.filter((m) => m.id !== memberId));
+    setInternalAttendees((prev) => prev.filter((m) => m.id !== memberId));
+  };
+  // Convert frontend requirements to backend amenity keys
+  const mapRequirementsToAmenities = (requirements: string[]): string[] => {
+    const requirementMap: { [key: string]: string } = {
+      Projector: "displayProjector",
+      Whiteboard: "displayWhiteboard",
+      Catering: "cateringAvailable",
+      "Video Conference": "videoConferenceAvailable",
+    };
+
+    return requirements.map((req) => requirementMap[req]).filter(Boolean);
   };
 
-  // Simple submit handler - Zod handles validation
-  const onSubmit = (data: MeetingFormData) => {
+  // Submit handler - Zod handles validation
+  const onSubmit = async (data: MeetingFormData) => {
     if (!selectedRoom) {
       toast.error("Please select a room");
       return;
     }
 
-    if (selectedMembers.length === 0) {
+    if (internalAttendees.length === 0) {
       toast.error("Please select at least one member");
       return;
     }
 
+    // Convert time strings to ISO date strings using the selected date
+    const startDateTime = new Date(
+      `${data.meetingDate}T${data.startTime}:00`
+    ).toISOString();
+    const endDateTime = new Date(
+      `${data.meetingDate}T${data.endTime}:00`
+    ).toISOString();
+
+    // Here you would typically send the data to your API
     const meetingData = {
-      ...data,
-      requirements,
       roomId: selectedRoom.id,
-      members: selectedMembers,
-      numberOfAttendees: selectedMembers.length,
+      title: data.title,
+      agenda: data.teamAgenda,
+      startTime: startDateTime,
+      endTime: endDateTime,
+      internalAttendees: internalAttendees.map((member) => String(member.id)),
+      requiredAmenities: mapRequirementsToAmenities(requirements),
     };
 
-    console.log("Meeting Data:", meetingData);
-
-    toast.success(
-      `Meeting "${data.meetingTitle}" created successfully!\nRoom: ${selectedRoom.name}\nMembers: ${selectedMembers.length}\nTime: ${data.startTime} - ${data.endTime}`,
-      { duration: 4000 }
-    );
+    try {
+      await createReservation(meetingData);
+      toast.success(
+        `Meeting "${data.title}" created successfully!\nRoom: ${selectedRoom.name}\nMembers: ${internalAttendees.length}\nDate: ${data.meetingDate}\nTime: ${data.startTime} - ${data.endTime}`,
+        { duration: 4000 }
+      );
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to create meeting. Please try again.");
+    }
   };
 
   return (
@@ -253,13 +320,27 @@ const CreateMeetingForm: React.FC = () => {
         <label className="block font-semibold mb-2">Meeting Title *</label>
         <input
           type="text"
-          {...register("meetingTitle")}
+          {...register("title")}
           placeholder="Enter meeting title"
           className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors"
         />
-        {errors.meetingTitle && (
+        {errors.title && (
+          <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+        )}
+      </div>
+
+      {/* Meeting Date */}
+      <div>
+        <label className="block font-semibold mb-2">Meeting Date *</label>
+        <input
+          type="date"
+          {...register("meetingDate")}
+          min={new Date().toISOString().split("T")[0]} // Prevent selecting past dates
+          className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors"
+        />
+        {errors.meetingDate && (
           <p className="mt-1 text-sm text-red-600">
-            {errors.meetingTitle.message}
+            {errors.meetingDate.message}
           </p>
         )}
       </div>
@@ -297,18 +378,18 @@ const CreateMeetingForm: React.FC = () => {
       {/* Select Members */}
       <div>
         <label className="block font-semibold mb-3">
-          Select Members ({selectedMembers.length} selected) *
+          Select Members ({internalAttendees.length} selected) *
         </label>
 
         {/* Selected Members Display */}
-        {selectedMembers.length > 0 && (
+        {internalAttendees.length > 0 && (
           <div className="mb-4">
             <div className="bg-blue-50 p-3 rounded-lg">
               <p className="text-blue-600 font-medium mb-2">
-                Selected Members ({selectedMembers.length}):
+                Selected Members ({internalAttendees.length}):
               </p>
               <div className="flex flex-wrap gap-2">
-                {selectedMembers.map((member) => (
+                {internalAttendees.map((member) => (
                   <div
                     key={member.id}
                     className="bg-blue-100 border border-blue-300 rounded-lg px-3 py-1 flex items-center gap-2"
@@ -339,8 +420,8 @@ const CreateMeetingForm: React.FC = () => {
           >
             <span className="flex items-center gap-2">
               <Users size={20} />
-              {selectedMembers.length > 0
-                ? `${selectedMembers.length} member(s) selected`
+              {internalAttendees.length > 0
+                ? `${internalAttendees.length} member(s) selected`
                 : "Select organization members"}
             </span>
             <div
@@ -362,7 +443,7 @@ const CreateMeetingForm: React.FC = () => {
               ) : orgMembers.length > 0 ? (
                 <div className="py-2">
                   {orgMembers.map((member) => {
-                    const isSelected = selectedMembers.some(
+                    const isSelected = internalAttendees.some(
                       (m) => m.id === member.id
                     );
                     const isCurrentUser = currentUser?.id === member.id;
@@ -400,9 +481,9 @@ const CreateMeetingForm: React.FC = () => {
           )}
         </div>
 
-        {errors.selectedMembers && (
+        {errors.internalAttendees && (
           <p className="mt-1 text-sm text-red-600">
-            {errors.selectedMembers.message}
+            {errors.internalAttendees.message}
           </p>
         )}
       </div>
@@ -481,7 +562,7 @@ const CreateMeetingForm: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 md:gap-6">
         {/* Name Input */}
-        <div>
+        {/* <div>
           <label className="block font-semibold mb-2">Name *</label>
           <input
             type="text"
@@ -492,10 +573,10 @@ const CreateMeetingForm: React.FC = () => {
           {errors.name && (
             <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
           )}
-        </div>
+        </div> */}
 
         {/* Department Input */}
-        <div>
+        {/* <div>
           <label className="block font-semibold mb-2">Department *</label>
           <input
             type="text"
@@ -508,7 +589,7 @@ const CreateMeetingForm: React.FC = () => {
               {errors.department.message}
             </p>
           )}
-        </div>
+        </div> */}
       </div>
 
       {/* Team Agenda Input */}
@@ -578,13 +659,15 @@ const CreateMeetingForm: React.FC = () => {
       </div>
 
       {/* Submit Button */}
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full bg-blue-600 text-white rounded-lg py-4 text-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isSubmitting ? "Creating Request..." : "Create Meeting Request"}
-      </button>
+      <div>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full bg-blue-600 text-white rounded-lg py-4 text-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? "Creating Request..." : "Create Meeting Request"}
+        </button>
+      </div>
     </form>
   );
 };
