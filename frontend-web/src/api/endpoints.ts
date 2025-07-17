@@ -48,6 +48,9 @@ export const ROOMS = "/rooms";
 export const ROOM_BY_ID = (roomId: string) => `/rooms/${roomId}`;
 export const ROOM_UPDATE = (roomId: string) => `/rooms/${roomId}`;
 export const ROOM_DELETE = (roomId: string) => `/rooms/${roomId}`;
+export const ACTIVE_ROOMS = '/rooms?isActive=true';
+export const CREATE_ROOM = "/rooms"
+export const DELETE_ROOM = (roomId:string)=>`/rooms/${roomId}`
 
 // Room search and filtering
 export const ROOMS_SEARCH = "/rooms/search";
@@ -56,6 +59,7 @@ export const ROOMS_STATUSES = "/rooms/statuses";
 // Room availability and statistics
 export const ROOM_AVAILABILITY = (roomId: string) => `/rooms/${roomId}/availability`;
 export const ROOM_STATS = (roomId: string) => `/rooms/${roomId}/stats`;
+export const ROOM_STATUS = (roomId: string) => `/rooms/${roomId}/status`;
 
 // Organization-specific room routes
 export const ORG_ROOMS = (orgId: string) => `/organization/${orgId}/rooms`;

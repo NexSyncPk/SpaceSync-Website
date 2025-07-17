@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { transformRoomData } from "../utils/mockData";
-import { getAllRooms } from "../api/services/index";
+import { getActiveRooms, getAllRooms } from "../api/services/index";
 import { Room } from "../types/interfaces";
 import { useSelector } from "react-redux";
 
@@ -41,7 +41,7 @@ export function useReqAndRoom(initialRequirements: string[] = [], initialAttende
       setError(null);
       
       console.log("🔄 Fetching rooms from API for org:", organizationId);
-      const response = await getAllRooms();
+      const response = await getActiveRooms();
       
       if (response && response.data) {
         console.log("✅ Rooms API Response:", response.data.length, "rooms");

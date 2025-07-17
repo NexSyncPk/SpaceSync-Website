@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Button } from "../ui/button";
+import { updateProfile } from "@/api/services/userService";
 
 const profileEditSchema = (signupSchema._def.schema as z.ZodObject<any>).omit({
   password: true,
@@ -68,6 +69,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     try {
       console.log(data);
       dispatch(updateUser(data));
+      const response = await updateProfile(data);
+      if (response) {
+        console.log(response);
+      }
       toast.success("Profile updated successfully!");
       onClose();
     } catch (error) {

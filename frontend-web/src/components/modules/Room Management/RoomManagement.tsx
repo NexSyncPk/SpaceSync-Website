@@ -7,6 +7,7 @@ import {
   MapPin,
   Search,
   MoreVertical,
+  Building,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,77 +22,48 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
 import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
-import { getAllRooms } from "@/api/services/userService";
+import {
+  addRooms,
+  deleteRoom,
+  getActiveRooms,
+  getAllRooms,
+  toggleRoomStatus,
+  updateRoom,
+} from "@/api/services/userService";
 
 // Room validation schema
 const roomSchema = z.object({
   name: z.string().min(1, "Room name is required"),
   capacity: z.number().min(1, "Capacity must be at least 1"),
-  location: z.string().min(1, "Location is required"),
-  amenities: z.array(z.string()),
-  description: z.string(),
+  displayProjector: z.boolean().optional(),
+  displayWhiteboard: z.boolean().optional(),
+  cateringAvailable: z.boolean().optional(),
+  videoConferenceAvailable: z.boolean().optional(),
 });
 
 type RoomFormData = z.infer<typeof roomSchema>;
 
-// Room type for state
+// Room type for API response
 interface Room {
-  id: number;
+  id: string;
   name: string;
   capacity: number;
-  location: string;
-  amenities: string[];
-  description: string;
+  displayProjector: boolean;
+  displayWhiteboard: boolean;
+  cateringAvailable: boolean;
+  videoConferenceAvailable: boolean;
   isActive: boolean;
-  bookingCount: number;
+  createdAt: string;
+  updatedAt: string;
+  organizationId: string;
+  Organization: {
+    id: string;
+    name: string;
+  };
 }
 
-// Mock room data
-const mockRooms: Room[] = [
-  {
-    id: 1,
-    name: "Conference Room A",
-    capacity: 12,
-    location: "Floor 1",
-    amenities: ["Projector", "Whiteboard", "Video Conference"],
-    description: "Large conference room with modern amenities",
-    isActive: true,
-    bookingCount: 45,
-  },
-  {
-    id: 2,
-    name: "Meeting Room B",
-    capacity: 6,
-    location: "Floor 2",
-    amenities: ["TV Screen", "Whiteboard"],
-    description: "Small meeting room for team discussions",
-    isActive: true,
-    bookingCount: 32,
-  },
-  {
-    id: 3,
-    name: "Creative Studio",
-    capacity: 8,
-    location: "Floor 1",
-    amenities: ["Projector", "Sound System", "Creative Tools"],
-    description: "Creative space for brainstorming sessions",
-    isActive: true,
-    bookingCount: 28,
-  },
-  {
-    id: 4,
-    name: "Executive Boardroom",
-    capacity: 16,
-    location: "Floor 3",
-    amenities: ["Projector", "Video Conference", "Premium Furniture"],
-    description: "High-end boardroom for executive meetings",
-    isActive: false,
-    bookingCount: 15,
-  },
-];
-
 const RoomManagement: React.FC = () => {
-  const [rooms, setRooms] = useState(mockRooms);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -100,6 +72,7 @@ const RoomManagement: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const {
     register,
@@ -110,19 +83,37 @@ const RoomManagement: React.FC = () => {
   } = useForm<RoomFormData>({
     resolver: zodResolver(roomSchema),
     defaultValues: {
-      amenities: [],
-      description: "",
+      displayProjector: false,
+      displayWhiteboard: false,
+      cateringAvailable: false,
+      videoConferenceAvailable: false,
     },
   });
 
+  // Helper function to get amenities array from boolean flags
+  const getAmenitiesFromRoom = (room: Room): string[] => {
+    const amenities: string[] = [];
+    if (room.displayProjector) amenities.push("Projector");
+    if (room.displayWhiteboard) amenities.push("Whiteboard");
+    if (room.cateringAvailable) amenities.push("Catering");
+    if (room.videoConferenceAvailable) amenities.push("Video Conference");
+    return amenities;
+  };
+
   const fetchAllRooms = async () => {
     try {
+      setIsLoading(true);
       const response = await getAllRooms();
-      if (response) {
-        console.log(response);
+      // const response = await getActiveRooms();
+      if (response && response.data) {
+        console.log("Rooms data:", response.data);
+        setRooms(response.data);
       }
     } catch (error) {
       console.log(error);
+      toast.error("Failed to load rooms");
+    } finally {
+      setIsLoading(false);
     }
   };
   useEffect(() => {
@@ -130,9 +121,11 @@ const RoomManagement: React.FC = () => {
   }, []);
 
   const filteredRooms = rooms.filter((room) => {
-    const matchesSearch =
-      room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      room.location.toLowerCase().includes(searchTerm.toLowerCase());
+    const amenities = getAmenitiesFromRoom(room);
+    const searchString = `${room.name} ${
+      room.Organization.name
+    } ${amenities.join(" ")}`.toLowerCase();
+    const matchesSearch = searchString.includes(searchTerm.toLowerCase());
     const matchesStatus =
       filterStatus === "all" ||
       (filterStatus === "active" && room.isActive) ||
@@ -140,35 +133,40 @@ const RoomManagement: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleAddRoom = (data: RoomFormData) => {
-    const newRoom: Room = {
-      id: rooms.length + 1,
-      ...data,
-      description: data.description || "",
-      isActive: true,
-      bookingCount: 0,
-    };
-    setRooms([...rooms, newRoom]);
-    toast.success("Room added successfully!");
+  const handleAddRoom = async (data: any) => {
+    // TODO: Implement actual API call for adding room
+    console.log("Adding room:", data);
+    try {
+      const response = await addRooms(data);
+      if (response) {
+        console.log(response);
+      }
+    } catch (error) {
+      console.log(error);
+    }
     setIsAddModalOpen(false);
     reset();
+    fetchAllRooms(); // Refresh the list
   };
 
-  const handleEditRoom = (data: RoomFormData) => {
+  const handleEditRoom = async (data: RoomFormData) => {
+    // TODO: Implement actual API call for updating room
     if (selectedRoom) {
-      setRooms(
-        rooms.map((room) =>
-          room.id === selectedRoom.id ? { ...room, ...data } : room
-        )
-      );
-      toast.success("Room updated successfully!");
-      setIsEditModalOpen(false);
-      setSelectedRoom(null);
-      reset();
+      try {
+        const response = await updateRoom(selectedRoom.id, data);
+        console.log(response);
+        toast.success("Room updated successfully!");
+        setIsEditModalOpen(false);
+        setSelectedRoom(null);
+        reset();
+        fetchAllRooms(); // Refresh the list
+      } catch (error) {
+        console.log(error);
+      }
     }
   };
 
-  const handleDeleteRoom = (roomId: number) => {
+  const handleDeleteRoom = (roomId: string) => {
     const room = rooms.find((r) => r.id === roomId);
     if (room) {
       setRoomToDelete(room);
@@ -181,13 +179,14 @@ const RoomManagement: React.FC = () => {
 
     setIsDeleting(true);
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setRooms(rooms.filter((room) => room.id !== roomToDelete.id));
+      const response = await deleteRoom(roomToDelete.id);
+      if (response) {
+        console.log(response);
+      }
       toast.success("Room deleted successfully!");
       setIsDeleteModalOpen(false);
       setRoomToDelete(null);
+      fetchAllRooms(); // Refresh the list
     } catch (error) {
       toast.error("Failed to delete room. Please try again.");
     } finally {
@@ -195,22 +194,26 @@ const RoomManagement: React.FC = () => {
     }
   };
 
-  const handleToggleStatus = (roomId: number) => {
-    setRooms(
-      rooms.map((room) =>
-        room.id === roomId ? { ...room, isActive: !room.isActive } : room
-      )
-    );
-    toast.success("Room status updated!");
+  const handleToggleStatus = async (roomId: string) => {
+    // TODO: Implement actual API call for toggling room status
+    console.log("Toggling status for room:", roomId);
+    try {
+      await toggleRoomStatus(roomId);
+      toast.success("Room status updated!");
+      fetchAllRooms(); // Refresh the list
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const openEditModal = (room: Room) => {
     setSelectedRoom(room);
     setValue("name", room.name);
     setValue("capacity", room.capacity);
-    setValue("location", room.location);
-    setValue("amenities", room.amenities);
-    setValue("description", room.description);
+    setValue("displayProjector", room.displayProjector);
+    setValue("displayWhiteboard", room.displayWhiteboard);
+    setValue("cateringAvailable", room.cateringAvailable);
+    setValue("videoConferenceAvailable", room.videoConferenceAvailable);
     setIsEditModalOpen(true);
   };
 
@@ -270,104 +273,129 @@ const RoomManagement: React.FC = () => {
       </div>
 
       {/* Rooms Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2  gap-6">
-        {filteredRooms.map((room) => (
-          <div
-            key={room.id}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
-          >
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {room.name}
-                  </h3>
-                  <div className="flex items-center text-sm text-gray-600 mt-1">
-                    <MapPin size={14} className="mr-1" />
-                    {room.location}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      room.isActive
-                        ? "bg-green-100 text-green-600"
-                        : "bg-red-100 text-red-600"
-                    }`}
-                  >
-                    {room.isActive ? "Active" : "Inactive"}
-                  </span>
-                  <div className="relative">
-                    <button className="p-1 text-gray-400 hover:text-gray-600">
-                      <MoreVertical size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Users size={14} className="mr-1" />
-                    Capacity: {room.capacity}
-                  </div>
-                  <span className="text-sm text-gray-600">
-                    {room.bookingCount} bookings
-                  </span>
-                </div>
-
-                {room.description && (
-                  <p className="text-sm text-gray-600">{room.description}</p>
-                )}
-
-                <div className="flex flex-wrap gap-1">
-                  {room.amenities.slice(0, 3).map((amenity, index) => (
-                    <span
-                      key={index}
-                      className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded"
-                    >
-                      {amenity}
-                    </span>
-                  ))}
-                  {room.amenities.length > 3 && (
-                    <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
-                      +{room.amenities.length - 3} more
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex gap-2 mt-4 pt-4 border-t border-gray-200">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => openEditModal(room)}
-                  className="flex-1"
-                >
-                  <Edit size={14} className="mr-1" />
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleToggleStatus(room.id)}
-                  className="flex-1"
-                >
-                  {room.isActive ? "Deactivate" : "Activate"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleDeleteRoom(room.id)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 size={14} />
-                </Button>
-              </div>
-            </div>
-          </div>
-        ))}
+      <div>
+        <h1 className="font-bold text-lg mb-4">
+          Total Rooms ({rooms?.length || 0})
+        </h1>
       </div>
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2 text-gray-600">Loading rooms...</span>
+        </div>
+      ) : filteredRooms.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500">
+            No rooms found matching your criteria.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredRooms.map((room) => {
+            const amenities = getAmenitiesFromRoom(room);
+            return (
+              <div
+                key={room.id}
+                className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {room.name}
+                      </h3>
+                      <div className="flex items-center text-sm text-gray-600 mt-1">
+                        <Building size={14} className="mr-1" />
+                        {room.Organization.name}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          room.isActive
+                            ? "bg-green-100 text-green-600"
+                            : "bg-red-100 text-red-600"
+                        }`}
+                      >
+                        {room.isActive ? "Active" : "Inactive"}
+                      </span>
+                      <div className="relative">
+                        <button className="p-1 text-gray-400 hover:text-gray-600">
+                          <MoreVertical size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Users size={14} className="mr-1" />
+                        Capacity: {room.capacity}
+                      </div>
+                      <span className="text-sm text-gray-600">
+                        Created: {new Date(room.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1">
+                      {amenities.length > 0 ? (
+                        <>
+                          {amenities.slice(0, 3).map((amenity, index) => (
+                            <span
+                              key={index}
+                              className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded"
+                            >
+                              {amenity}
+                            </span>
+                          ))}
+                          {amenities.length > 3 && (
+                            <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
+                              +{amenities.length - 3} more
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="px-2 py-1 text-xs bg-gray-100 text-gray-500 rounded">
+                          No amenities
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 mt-4 pt-4 border-t border-gray-200">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openEditModal(room)}
+                      className="flex-1"
+                    >
+                      <Edit size={14} className="mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleToggleStatus(room.id)}
+                      className="flex-1"
+                    >
+                      {room.isActive ? "Deactivate" : "Activate"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDeleteRoom(room.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Add Room Modal */}
       <Dialog
@@ -418,31 +446,45 @@ const RoomManagement: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Location
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Amenities
               </label>
-              <input
-                {...register("location")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter location"
-              />
-              {errors.location && (
-                <p className="text-red-600 text-sm mt-1">
-                  {errors.location.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                {...register("description")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter description"
-                rows={3}
-              />
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    {...register("displayProjector")}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Projector</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    {...register("displayWhiteboard")}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Whiteboard</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    {...register("cateringAvailable")}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Catering</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    {...register("videoConferenceAvailable")}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    Video Conference
+                  </span>
+                </label>
+              </div>
             </div>
 
             <DialogFooter>
@@ -514,31 +556,45 @@ const RoomManagement: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Location
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Amenities
               </label>
-              <input
-                {...register("location")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter location"
-              />
-              {errors.location && (
-                <p className="text-red-600 text-sm mt-1">
-                  {errors.location.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                {...register("description")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter description"
-                rows={3}
-              />
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    {...register("displayProjector")}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Projector</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    {...register("displayWhiteboard")}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Whiteboard</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    {...register("cateringAvailable")}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Catering</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    {...register("videoConferenceAvailable")}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    Video Conference
+                  </span>
+                </label>
+              </div>
             </div>
 
             <DialogFooter>
