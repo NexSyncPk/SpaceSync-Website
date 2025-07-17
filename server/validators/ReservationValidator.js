@@ -42,6 +42,16 @@ class ReservationValidator extends BaseValidator {
                 'string.max': 'Agenda cannot exceed 500 characters'
             }),
         
+        title: Joi.string()
+            .min(3)
+            .max(100)
+            .required()
+            .messages({
+                'string.empty': 'Title is required',
+                'string.min': 'Title must be at least 3 characters long',
+                'string.max': 'Title cannot exceed 100 characters'
+            }),
+        
         status: Joi.string()
             .valid('pending', 'confirmed', 'cancelled', 'completed')
             .default('pending')
@@ -131,6 +141,14 @@ class ReservationValidator extends BaseValidator {
             .messages({
                 'string.min': 'Agenda must be at least 5 characters long',
                 'string.max': 'Agenda cannot exceed 500 characters'
+            }),
+        
+        title: Joi.string()
+            .min(3)
+            .max(100)
+            .messages({
+                'string.min': 'Title must be at least 3 characters long',
+                'string.max': 'Title cannot exceed 100 characters'
             }),
         
         status: Joi.string()
