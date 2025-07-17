@@ -1,4 +1,4 @@
-import { ORGANIZATION_BY_ID, ORGANIZATIONS, ROOMS, USER_BY_ID, USER_CREATE_ORGANIZATION, USER_JOIN_ORGANIZATION } from "../endpoints";
+import { ORGANIZATION_BY_ID, ORGANIZATION_USERS, ORGANIZATIONS, ROOMS, USER_BY_ID, USER_CREATE_ORGANIZATION, USER_JOIN_ORGANIZATION } from "../endpoints";
 import api from "../interceptor";
 
 const fetchOrganizationByUser = (userId: string)=>{
@@ -60,11 +60,23 @@ const getAllRooms = ()=>{
         return false;
     }
 }
+
+const getOrganizationMembers = (organizationId: string)=>{
+    try {
+        const response = api.get(ORGANIZATION_USERS(organizationId));
+        return response;
+    } catch (error) {
+        console.log("error: ", error);
+        return false;
+    }
+}
+
 export{
     fetchOrganizationByUser,
     createOrganization,
     getAllRooms,
     getUserById,
     getAllOrganizations,
-    joinOrganization
+    joinOrganization,
+    getOrganizationMembers
 }

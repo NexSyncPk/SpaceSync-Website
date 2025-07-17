@@ -9,6 +9,7 @@ export{
     getAllRooms,
     getUserById,
     getAllOrganizations,
-    joinOrganization
+    joinOrganization,
+    getOrganizationMembers
 
 } from "./userService"

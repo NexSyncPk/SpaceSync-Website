@@ -1,20 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
 
 import {
   Monitor,
   PenTool,
   Video,
   CheckCircle,
-  Plus,
-  Minus,
   Utensils,
+  X,
+  Users,
 } from "lucide-react";
 import { useReqAndRoom } from "@/hooks/useReqAndRoom";
 import Rooms from "@/components/shared/Rooms";
+import { getOrganizationMembers } from "@/api/services/index";
+import { User } from "@/types/interfaces";
 // import { useDispatch, useSelector } from "../store/hooks.js";
 // import { setSelectedRoom } from "../store/slices/bookingSlice.js";
 
@@ -27,7 +30,17 @@ const meetingSchema = z
     teamAgenda: z.string().min(1, "Team agenda is required"),
     startTime: z.string().min(1, "Start time is required"),
     endTime: z.string().min(1, "End time is required"),
-    numberOfAttendees: z.number().min(1, "At least 1 attendee required"),
+    selectedMembers: z
+      .array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          email: z.string(),
+          department: z.string(),
+        })
+      )
+      .min(1, "At least one member must be selected")
+      .max(20, "Maximum 20 members can be selected"),
   })
   .refine(
     (data) => {
@@ -109,6 +122,15 @@ const MeetingRequirementsView: React.FC<MeetingRequirementsViewProps> = ({
 };
 
 const CreateMeetingForm: React.FC = () => {
+  const [orgMembers, setOrgMembers] = useState<User[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [showMemberDropdown, setShowMemberDropdown] = useState(false);
+  const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
+
+  // Get organization info from Redux
+  const organization = useSelector((state: any) => state.organization.current);
+  const currentUser = useSelector((state: any) => state.auth.user);
+
   // Form with Zod validation
   const {
     register,
@@ -125,28 +147,76 @@ const CreateMeetingForm: React.FC = () => {
       teamAgenda: "",
       startTime: "",
       endTime: "",
-      numberOfAttendees: 1,
+      selectedMembers: [],
     },
   });
 
-  // Use the custom hook for requirements, attendees, and room selection logic
-
+  // Use the custom hook for requirements and room selection logic
   const {
     requirements,
-    numberOfAttendees,
     filteredRooms,
     selectedRoom,
     isLoading,
     error,
     handleRequirementToggle,
-    handleAttendeesChange,
     handleRoomSelect,
-  } = useReqAndRoom([], 1);
+  } = useReqAndRoom([], selectedMembers.length || 1);
 
-  // Sync numberOfAttendees with react-hook-form
-  React.useEffect(() => {
-    setValue("numberOfAttendees", numberOfAttendees);
-  }, [numberOfAttendees, setValue]);
+  // Fetch organization members when component mounts
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (!organization?.id) return;
+
+      setLoadingMembers(true);
+      try {
+        const response = await getOrganizationMembers(organization.id);
+        if (response && response.data) {
+          setOrgMembers(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching organization members:", error);
+        toast.error("Failed to load organization members");
+      } finally {
+        setLoadingMembers(false);
+      }
+    };
+
+    fetchMembers();
+  }, [organization?.id]);
+
+  // Convert User to form format
+  const convertUserToFormFormat = (user: User) => ({
+    id: String(user.id),
+    name: user.name,
+    email: user.email,
+    department: user.department,
+  });
+
+  // Update form when selected members change
+  useEffect(() => {
+    const formattedMembers = selectedMembers.map(convertUserToFormFormat);
+    setValue("selectedMembers", formattedMembers);
+  }, [selectedMembers, setValue]);
+
+  // Handle member selection
+  const handleMemberSelect = (member: User) => {
+    const isAlreadySelected = selectedMembers.some((m) => m.id === member.id);
+
+    if (isAlreadySelected) {
+      setSelectedMembers((prev) => prev.filter((m) => m.id !== member.id));
+    } else {
+      if (selectedMembers.length >= 20) {
+        toast.error("Maximum 20 members can be selected");
+        return;
+      }
+      setSelectedMembers((prev) => [...prev, member]);
+    }
+  };
+
+  // Remove selected member
+  const removeMember = (memberId: string | number) => {
+    setSelectedMembers((prev) => prev.filter((m) => m.id !== memberId));
+  };
 
   // Simple submit handler - Zod handles validation
   const onSubmit = (data: MeetingFormData) => {
@@ -155,16 +225,23 @@ const CreateMeetingForm: React.FC = () => {
       return;
     }
 
+    if (selectedMembers.length === 0) {
+      toast.error("Please select at least one member");
+      return;
+    }
+
     const meetingData = {
       ...data,
       requirements,
-      roomId: selectedRoom.id, // Use the room ID instead of the whole room object
+      roomId: selectedRoom.id,
+      members: selectedMembers,
+      numberOfAttendees: selectedMembers.length,
     };
 
     console.log("Meeting Data:", meetingData);
 
     toast.success(
-      `Meeting "${data.meetingTitle}" created successfully!\nRoom: ${selectedRoom.name}\nTime: ${data.startTime} - ${data.endTime}`,
+      `Meeting "${data.meetingTitle}" created successfully!\nRoom: ${selectedRoom.name}\nMembers: ${selectedMembers.length}\nTime: ${data.startTime} - ${data.endTime}`,
       { duration: 4000 }
     );
   };
@@ -217,34 +294,115 @@ const CreateMeetingForm: React.FC = () => {
         </div>
       </div>
 
-      {/* Number of Attendees */}
+      {/* Select Members */}
       <div>
         <label className="block font-semibold mb-3">
-          Number of Attendees *
+          Select Members ({selectedMembers.length} selected) *
         </label>
-        <div className="flex items-center gap-4">
+
+        {/* Selected Members Display */}
+        {selectedMembers.length > 0 && (
+          <div className="mb-4">
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <p className="text-blue-600 font-medium mb-2">
+                Selected Members ({selectedMembers.length}):
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {selectedMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="bg-blue-100 border border-blue-300 rounded-lg px-3 py-1 flex items-center gap-2"
+                  >
+                    <span className="text-blue-700 text-sm">
+                      {member.name} ({member.department})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeMember(member.id)}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Member Selection Dropdown */}
+        <div className="relative">
           <button
             type="button"
-            onClick={() => handleAttendeesChange(numberOfAttendees - 1)}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={numberOfAttendees <= 1}
+            onClick={() => setShowMemberDropdown(!showMemberDropdown)}
+            className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-left focus:border-blue-500 focus:outline-none transition-colors flex items-center justify-between"
           >
-            <Minus size={24} />
+            <span className="flex items-center gap-2">
+              <Users size={20} />
+              {selectedMembers.length > 0
+                ? `${selectedMembers.length} member(s) selected`
+                : "Select organization members"}
+            </span>
+            <div
+              className={`transform transition-transform ${
+                showMemberDropdown ? "rotate-180" : ""
+              }`}
+            >
+              ▼
+            </div>
           </button>
-          <span className="text-xl font-medium min-w-[2rem] text-center">
-            {numberOfAttendees}
-          </span>
-          <button
-            type="button"
-            onClick={() => handleAttendeesChange(numberOfAttendees + 1)}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-          >
-            <Plus size={24} />
-          </button>
+
+          {showMemberDropdown && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              {loadingMembers ? (
+                <div className="p-4 text-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-600">Loading members...</p>
+                </div>
+              ) : orgMembers.length > 0 ? (
+                <div className="py-2">
+                  {orgMembers.map((member) => {
+                    const isSelected = selectedMembers.some(
+                      (m) => m.id === member.id
+                    );
+                    const isCurrentUser = currentUser?.id === member.id;
+
+                    return (
+                      <button
+                        key={member.id}
+                        type="button"
+                        onClick={() => handleMemberSelect(member)}
+                        className={`w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center justify-between ${
+                          isSelected ? "bg-blue-50 text-blue-700" : ""
+                        }`}
+                      >
+                        <div>
+                          <p className="font-medium">
+                            {member.name} {isCurrentUser && "(You)"}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {member.department} • {member.email}
+                          </p>
+                        </div>
+                        {isSelected && (
+                          <CheckCircle size={16} className="text-blue-600" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-4 text-center text-gray-500">
+                  No organization members found
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        {errors.numberOfAttendees && (
+
+        {errors.selectedMembers && (
           <p className="mt-1 text-sm text-red-600">
-            {errors.numberOfAttendees.message}
+            {errors.selectedMembers.message}
           </p>
         )}
       </div>

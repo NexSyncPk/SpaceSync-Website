@@ -91,6 +91,15 @@ export const meetingRequestBaseShape = {
     .number()
     .min(1, 'At least 1 attendee is required')
     .max(50, 'Maximum 50 attendees allowed'),
+  selectedMembers: z
+    .array(z.object({
+      id: z.string(),
+      name: z.string(),
+      email: z.string(),
+      department: z.string(),
+    }))
+    .min(1, 'At least one member must be selected')
+    .max(20, 'Maximum 20 members can be selected'),
   meetingType: z
     .enum(['internal', 'external'], {
       required_error: 'Please select meeting type',
