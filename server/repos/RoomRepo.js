@@ -26,6 +26,14 @@ class RoomRepo extends BaseRepo {
         });
     }
 
+    async toggleRoomStatus(id, organizationId = null) {
+        const room = await this.getRoomById(id, organizationId);
+        if (!room) return null;
+        room.isActive = !room.isActive;
+        await room.save();
+        return room;
+    }
+
     async getRoomById(id, organizationId = null) {
         const where = { id };
         

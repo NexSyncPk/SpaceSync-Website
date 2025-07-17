@@ -124,6 +124,60 @@ router.get("/profile", asyncErrorHandler(UserController.getProfile));
 
 /**
  * @swagger
+ * /user/profile:
+ *   put:
+ *     summary: Update user profile
+ *     description: Update the profile information of the currently authenticated user
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: User's full name
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: User's email address
+ *               phone:
+ *                 type: string
+ *                 description: User's phone number
+ *               department:
+ *                 type: string
+ *                 description: User's department
+ *               position:
+ *                 type: string
+ *                 description: User's position or job title
+ *     responses:
+ *       200:
+ *         description: User profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.put("/profile", asyncErrorHandler(UserController.updateProfile));
+
+/**
+ * @swagger
  * /user/current:
  *   get:
  *     summary: Get current user profile with fresh data

@@ -17,7 +17,6 @@ import {
 } from "../ui/dialog";
 import { Button } from "../ui/button";
 
-// Remove password fields for profile editing
 const profileEditSchema = (signupSchema._def.schema as z.ZodObject<any>).omit({
   password: true,
   confirmPassword: true,
@@ -67,6 +66,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const onSubmit = async (data: ProfileEditFormData) => {
     console.log("Submitting profile data:", data);
     try {
+      console.log(data);
       dispatch(updateUser(data));
       toast.success("Profile updated successfully!");
       onClose();
