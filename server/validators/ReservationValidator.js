@@ -234,7 +234,7 @@ class ReservationValidator extends BaseValidator {
   // Schema for updating reservation status
   statusUpdateSchema = Joi.object({
     status: Joi.string()
-      .valid("pending", "confirmed", "cancelled")
+      .valid("pending", "confirmed", "cancelled", "completed")
       .required()
       .messages({
         "any.only": "Status must be pending, confirmed, or cancelled",

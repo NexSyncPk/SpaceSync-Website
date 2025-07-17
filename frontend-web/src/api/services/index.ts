@@ -13,6 +13,7 @@ export {
   deleteRoom,
   toggleRoomStatus,
   updateRoom,
+  getAllBookings,
 } from "./userService";
 
 export {

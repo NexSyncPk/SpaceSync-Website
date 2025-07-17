@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import React, { useEffect, useState } from "react";
 import {
   Calendar,
   Clock,
@@ -9,10 +8,10 @@ import {
   Eye,
   Check,
   X,
+  Loader2,
 } from "lucide-react";
 
 import toast from "react-hot-toast";
-import { updateBooking } from "@/store/slices/bookingSlice";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,13 +20,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  getAllReservations,
+  updateReservationStatus,
+} from "@/api/services/bookingService";
 
 const BookingManagement: React.FC = () => {
-  const dispatch = useDispatch();
-  const { upcomingBookings, pastBookings } = useSelector(
-    (state: any) => state.booking
+  const [allBookings, setAllBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingBookings, setUpdatingBookings] = useState<Set<string>>(
+    new Set()
   );
-  const allBookings = [...(upcomingBookings || []), ...(pastBookings || [])];
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
@@ -35,9 +38,13 @@ const BookingManagement: React.FC = () => {
 
   const filteredBookings = (allBookings || []).filter((booking: any) => {
     const matchesSearch =
-      booking.meetingTitle?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-      booking.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-      booking.department?.toLowerCase().includes(searchTerm.toLowerCase());
+      booking.title?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+      booking.User?.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+      booking.User?.department
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      booking.Room?.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+      booking.agenda?.toLowerCase()?.includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       filterStatus === "all" || booking.status === filterStatus;
@@ -45,41 +52,130 @@ const BookingManagement: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleApproveBooking = (bookingId: number) => {
-    dispatch(
-      updateBooking({
-        id: bookingId,
-        updates: { status: "approved" },
-      })
-    );
-    toast.success("Booking approved successfully!");
+  const fetchReservations = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllReservations();
+      console.log(response);
+      if (response?.data) {
+        // Handle both paginated and non-paginated responses
+        const reservations = response.data.reservations || response.data.data;
+        setAllBookings(Array.isArray(reservations) ? reservations : []);
+        console.log("Fetched reservations:", reservations);
+      } else {
+        setAllBookings([]);
+      }
+    } catch (error) {
+      console.error("Error fetching reservations:", error);
+      toast.error("Failed to fetch reservations");
+      setAllBookings([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRejectBooking = (bookingId: number) => {
-    dispatch(
-      updateBooking({
-        id: bookingId,
-        updates: { status: "cancelled" },
-      })
-    );
-    toast.success("Booking rejected successfully!");
+  useEffect(() => {
+    fetchReservations();
+  }, []);
+
+  const handleApproveBooking = async (bookingId: string) => {
+    try {
+      // Add booking ID to updating set
+      setUpdatingBookings((prev) => new Set(prev).add(bookingId));
+
+      // TODO: Replace with actual API call when endpoint is available
+      await updateReservationStatus(bookingId, "confirmed");
+
+      // For now, update local state
+      setAllBookings((prev) =>
+        prev.map((booking) =>
+          booking.id === bookingId
+            ? { ...booking, status: "confirmed" }
+            : booking
+        )
+      );
+
+      toast.success("Booking confirmed successfully!");
+    } catch (error) {
+      console.error("Error confirming booking:", error);
+      toast.error("Failed to confirm booking");
+    } finally {
+      // Remove booking ID from updating set
+      setUpdatingBookings((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(bookingId);
+        return newSet;
+      });
+    }
   };
 
-  const handleCompleteBooking = (bookingId: number) => {
-    dispatch(
-      updateBooking({
-        id: bookingId,
-        updates: { status: "completed" },
-      })
-    );
-    toast.success("Booking marked as completed!");
+  const handleRejectBooking = async (bookingId: string) => {
+    try {
+      // Add booking ID to updating set
+      setUpdatingBookings((prev) => new Set(prev).add(bookingId));
+
+      // TODO: Replace with actual API call when endpoint is available
+      await updateReservationStatus(bookingId, "cancelled");
+
+      // For now, update local state
+      setAllBookings((prev) =>
+        prev.map((booking) =>
+          booking.id === bookingId
+            ? { ...booking, status: "cancelled" }
+            : booking
+        )
+      );
+
+      toast.success("Booking cancelled successfully!");
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      toast.error("Failed to cancel booking");
+    } finally {
+      // Remove booking ID from updating set
+      setUpdatingBookings((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(bookingId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleCompleteBooking = async (bookingId: string) => {
+    try {
+      // Add booking ID to updating set
+      setUpdatingBookings((prev) => new Set(prev).add(bookingId));
+
+      // TODO: Replace with actual API call when endpoint is available
+      await updateReservationStatus(bookingId, "completed");
+
+      // For now, update local state
+      setAllBookings((prev) =>
+        prev.map((booking) =>
+          booking.id === bookingId
+            ? { ...booking, status: "completed" }
+            : booking
+        )
+      );
+
+      toast.success("Booking marked as completed!");
+    } catch (error) {
+      console.error("Error completing booking:", error);
+      toast.error("Failed to complete booking");
+    } finally {
+      // Remove booking ID from updating set
+      setUpdatingBookings((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(bookingId);
+        return newSet;
+      });
+    }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
         return "bg-yellow-100 text-yellow-600";
-      case "approved":
+      case "confirmed":
         return "bg-green-100 text-green-600";
       case "completed":
         return "bg-blue-100 text-blue-600";
@@ -94,7 +190,7 @@ const BookingManagement: React.FC = () => {
     switch (status) {
       case "pending":
         return "border-l-yellow-500";
-      case "approved":
+      case "confirmed":
         return "border-l-green-500";
       case "completed":
         return "border-l-blue-500";
@@ -117,6 +213,22 @@ const BookingManagement: React.FC = () => {
       month: "short",
       day: "numeric",
     });
+  };
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getAmenityBadges = (room: any) => {
+    const amenities = [];
+    if (room?.displayProjector) amenities.push("Projector");
+    if (room?.displayWhiteboard) amenities.push("Whiteboard");
+    if (room?.cateringAvailable) amenities.push("Catering");
+    if (room?.videoConferenceAvailable) amenities.push("Video Conference");
+    return amenities;
   };
 
   return (
@@ -172,9 +284,12 @@ const BookingManagement: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Approved</p>
+              <p className="text-sm font-medium text-gray-600">Confirmed</p>
               <p className="text-2xl font-bold text-gray-900">
-                {allBookings.filter((b: any) => b.status === "approved").length}
+                {
+                  allBookings.filter((b: any) => b.status === "confirmed")
+                    .length
+                }
               </p>
             </div>
             <div className="p-3 rounded-lg bg-green-100">
@@ -227,7 +342,7 @@ const BookingManagement: React.FC = () => {
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
+              <option value="confirmed">Confirmed</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
@@ -244,109 +359,178 @@ const BookingManagement: React.FC = () => {
         </div>
 
         <div className="divide-y divide-gray-200">
-          {filteredBookings.map((booking: any) => (
-            <div
-              key={booking.id}
-              className={`p-6 border-l-4 ${getPriorityColor(
-                booking.status
-              )} hover:bg-gray-50`}
-            >
-              <div className="flex items-center justify-between relative">
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      {booking.meetingTitle}
-                    </h3>
-                    <span
-                      className={` absolute right-0 px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                        booking.status
-                      )}`}
-                    >
-                      {booking.status}
-                    </span>
-                  </div>
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600">Loading bookings...</p>
+            </div>
+          ) : filteredBookings.length === 0 ? (
+            <div className="p-8 text-center">
+              <Calendar className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                No bookings found
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {searchTerm || filterStatus !== "all"
+                  ? "Try adjusting your search or filter criteria."
+                  : "No booking requests have been submitted yet."}
+              </p>
+            </div>
+          ) : (
+            filteredBookings.map((booking: any) => (
+              <div
+                key={booking.id}
+                className={`p-6 border-l-4 ${getPriorityColor(
+                  booking.status
+                )} hover:bg-gray-50 ${
+                  updatingBookings.has(booking.id)
+                    ? "opacity-75 bg-gray-50"
+                    : ""
+                } transition-all duration-200`}
+              >
+                <div className="flex items-center justify-between relative">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {booking.title}
+                      </h3>
+                      <span
+                        className={` absolute right-0 px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                          booking.status
+                        )}`}
+                      >
+                        {booking.status}
+                      </span>
+                    </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                    <div className="flex items-center">
-                      <Users size={14} className="mr-2" />
-                      {booking.name || "Unknown"} •{" "}
-                      {booking.department || "N/A"}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                      <div className="flex items-center">
+                        <Users size={14} className="mr-2" />
+                        {booking.User?.name || "Unknown"} •{" "}
+                        {booking.User?.department || "N/A"}
+                      </div>
+                      <div className="flex items-center">
+                        <MapPin size={14} className="mr-2" />
+                        {booking.Room?.name || `Room ${booking.roomId}`}
+                      </div>
+                      <div className="flex items-center">
+                        <Calendar size={14} className="mr-2" />
+                        {formatDate(booking.startTime)}
+                      </div>
+                      <div className="flex items-center">
+                        <Clock size={14} className="mr-2" />
+                        {formatTime(booking.startTime)} -{" "}
+                        {formatTime(booking.endTime)}
+                      </div>
+                      <div className="flex items-center">
+                        <Users size={14} className="mr-2" />
+                        Capacity: {booking.Room?.capacity || "N/A"}
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <MapPin size={14} className="mr-2" />
-                      Room {booking.roomId}
-                    </div>
-                    <div className="flex items-center">
-                      <Calendar size={14} className="mr-2" />
-                      {formatDate(booking.date)}
-                    </div>
-                    <div className="flex items-center">
-                      <Clock size={14} className="mr-2" />
-                      {booking.startTime} - {booking.endTime}
-                    </div>
-                  </div>
 
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-600">
-                      <strong>Agenda:</strong> {booking.teamAgenda}
-                    </p>
-                    {booking.requirements &&
-                      booking.requirements.length > 0 && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          <strong>Requirements:</strong>{" "}
-                          {booking.requirements.join(", ")}
-                        </p>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-600">
+                        <strong>Agenda:</strong> {booking.agenda}
+                      </p>
+                      {booking.internalAttendees &&
+                        booking.internalAttendees.length > 0 && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            <strong>Internal Attendees:</strong>{" "}
+                            {booking.internalAttendees.length} members
+                          </p>
+                        )}
+                      {booking.externalAttendees &&
+                        booking.externalAttendees.length > 0 && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            <strong>External Attendees:</strong>{" "}
+                            {booking.externalAttendees.length} guests
+                          </p>
+                        )}
+                      {getAmenityBadges(booking.Room).length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600 mb-1">
+                            <strong>Room Amenities:</strong>
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {getAmenityBadges(booking.Room).map(
+                              (amenity: string, index: number) => (
+                                <span
+                                  key={index}
+                                  className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded"
+                                >
+                                  {amenity}
+                                </span>
+                              )
+                            )}
+                          </div>
+                        </div>
                       )}
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2 ml-4 max-sm:flex-col">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-28"
-                    onClick={() => openViewModal(booking)}
-                  >
-                    <Eye size={14} className="mr-1" />
-                    View
-                  </Button>
-
-                  {booking.status === "pending" && (
-                    <>
-                      <Button
-                        size="sm"
-                        onClick={() => handleApproveBooking(booking.id)}
-                        className="bg-green-600 hover:bg-green-700 w-28"
-                      >
-                        <Check size={14} className="mr-1" />
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleRejectBooking(booking.id)}
-                        className="text-red-600 hover:text-red-700 w-28"
-                      >
-                        <X size={14} className="mr-1" />
-                        Reject
-                      </Button>
-                    </>
-                  )}
-
-                  {booking.status === "approved" && (
+                  <div className="flex items-center gap-2 ml-4 max-sm:flex-col">
                     <Button
                       size="sm"
-                      onClick={() => handleCompleteBooking(booking.id)}
-                      className="bg-blue-600 hover:bg-blue-700 w-28"
+                      variant="outline"
+                      className="w-28"
+                      onClick={() => openViewModal(booking)}
                     >
-                      <Check size={14} className="mr-1" />
-                      Complete
+                      <Eye size={14} className="mr-1" />
+                      View
                     </Button>
-                  )}
+
+                    {booking.status === "pending" && (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() => handleApproveBooking(booking.id)}
+                          className="bg-green-600 hover:bg-green-700 w-28"
+                          disabled={updatingBookings.has(booking.id)}
+                        >
+                          {updatingBookings.has(booking.id) ? (
+                            <Loader2 size={14} className="mr-1 animate-spin" />
+                          ) : (
+                            <Check size={14} className="mr-1" />
+                          )}
+                          Confirm
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRejectBooking(booking.id)}
+                          className="text-red-600 hover:text-red-700 w-28"
+                          disabled={updatingBookings.has(booking.id)}
+                        >
+                          {updatingBookings.has(booking.id) ? (
+                            <Loader2 size={14} className="mr-1 animate-spin" />
+                          ) : (
+                            <X size={14} className="mr-1" />
+                          )}
+                          Cancel
+                        </Button>
+                      </>
+                    )}
+
+                    {booking.status === "confirmed" && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleCompleteBooking(booking.id)}
+                        className="bg-blue-600 hover:bg-blue-700 w-28"
+                        disabled={updatingBookings.has(booking.id)}
+                      >
+                        {updatingBookings.has(booking.id) ? (
+                          <Loader2 size={14} className="mr-1 animate-spin" />
+                        ) : (
+                          <Check size={14} className="mr-1" />
+                        )}
+                        Complete
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -373,7 +557,7 @@ const BookingManagement: React.FC = () => {
                     Meeting Title
                   </label>
                   <p className="text-sm text-gray-900">
-                    {selectedBooking.meetingTitle}
+                    {selectedBooking.title}
                   </p>
                 </div>
                 <div>
@@ -396,7 +580,10 @@ const BookingManagement: React.FC = () => {
                     Organizer
                   </label>
                   <p className="text-sm text-gray-900">
-                    {selectedBooking.name || "Unknown"}
+                    {selectedBooking.User?.name || "Unknown"}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {selectedBooking.User?.email}
                   </p>
                 </div>
                 <div>
@@ -404,7 +591,7 @@ const BookingManagement: React.FC = () => {
                     Department
                   </label>
                   <p className="text-sm text-gray-900">
-                    {selectedBooking.department || "N/A"}
+                    {selectedBooking.User?.department || "N/A"}
                   </p>
                 </div>
               </div>
@@ -415,7 +602,7 @@ const BookingManagement: React.FC = () => {
                     Date
                   </label>
                   <p className="text-sm text-gray-900">
-                    {formatDate(selectedBooking.date)}
+                    {formatDate(selectedBooking.startTime)}
                   </p>
                 </div>
                 <div>
@@ -423,7 +610,8 @@ const BookingManagement: React.FC = () => {
                     Time
                   </label>
                   <p className="text-sm text-gray-900">
-                    {selectedBooking.startTime} - {selectedBooking.endTime}
+                    {formatTime(selectedBooking.startTime)} -{" "}
+                    {formatTime(selectedBooking.endTime)}
                   </p>
                 </div>
               </div>
@@ -434,16 +622,33 @@ const BookingManagement: React.FC = () => {
                     Room
                   </label>
                   <p className="text-sm text-gray-900">
-                    Room {selectedBooking.roomId}
+                    {selectedBooking.Room?.name ||
+                      `Room ${selectedBooking.roomId}`}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Capacity: {selectedBooking.Room?.capacity || "N/A"}
                   </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Attendees
                   </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedBooking.numberOfAttendees} people
-                  </p>
+                  <div className="text-sm text-gray-900">
+                    {selectedBooking.internalAttendees?.length > 0 && (
+                      <p>
+                        Internal: {selectedBooking.internalAttendees.length}
+                      </p>
+                    )}
+                    {selectedBooking.externalAttendees?.length > 0 && (
+                      <p>
+                        External: {selectedBooking.externalAttendees.length}
+                      </p>
+                    )}
+                    {!selectedBooking.internalAttendees?.length &&
+                      !selectedBooking.externalAttendees?.length && (
+                        <p>No attendees</p>
+                      )}
+                  </div>
                 </div>
               </div>
 
@@ -452,30 +657,52 @@ const BookingManagement: React.FC = () => {
                   Agenda
                 </label>
                 <p className="text-sm text-gray-900">
-                  {selectedBooking.teamAgenda}
+                  {selectedBooking.agenda}
                 </p>
               </div>
 
-              {selectedBooking.requirements &&
-                selectedBooking.requirements.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Requirements
-                    </label>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {selectedBooking.requirements.map(
-                        (req: string, index: number) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded"
-                          >
-                            {req}
-                          </span>
-                        )
-                      )}
-                    </div>
+              {getAmenityBadges(selectedBooking.Room).length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Room Amenities
+                  </label>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {getAmenityBadges(selectedBooking.Room).map(
+                      (amenity: string, index: number) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded"
+                        >
+                          {amenity}
+                        </span>
+                      )
+                    )}
                   </div>
-                )}
+                </div>
+              )}
+
+              {selectedBooking.externalAttendees?.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    External Attendees
+                  </label>
+                  <div className="space-y-2 mt-1">
+                    {selectedBooking.externalAttendees.map(
+                      (attendee: any, index: number) => (
+                        <div
+                          key={index}
+                          className="text-sm text-gray-900 bg-gray-50 p-2 rounded"
+                        >
+                          <p className="font-medium">{attendee.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {attendee.email}
+                          </p>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -499,8 +726,12 @@ const BookingManagement: React.FC = () => {
                     setIsViewModalOpen(false);
                   }}
                   className="bg-green-600 hover:bg-green-700"
+                  disabled={updatingBookings.has(selectedBooking.id)}
                 >
-                  Approve
+                  {updatingBookings.has(selectedBooking.id) ? (
+                    <Loader2 size={14} className="mr-1 animate-spin" />
+                  ) : null}
+                  Confirm
                 </Button>
                 <Button
                   variant="outline"
@@ -510,8 +741,12 @@ const BookingManagement: React.FC = () => {
                     setIsViewModalOpen(false);
                   }}
                   className="text-red-600 hover:text-red-700"
+                  disabled={updatingBookings.has(selectedBooking.id)}
                 >
-                  Reject
+                  {updatingBookings.has(selectedBooking.id) ? (
+                    <Loader2 size={14} className="mr-1 animate-spin" />
+                  ) : null}
+                  Cancel
                 </Button>
               </div>
             )}

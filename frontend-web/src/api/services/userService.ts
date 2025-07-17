@@ -13,6 +13,7 @@ import {
   ROOMS_STATUSES,
   ROOM_STATUS,
   ROOM_UPDATE,
+  RESERVATIONS,
 } from "../endpoints";
 import api from "../interceptor";
 import { store } from "@/store/store";
@@ -249,6 +250,16 @@ const refreshAllOrganizationData = async (organizationId: string) => {
   }
 };
 
+const getAllBookings = () => {
+  try {
+    const response = api.get(RESERVATIONS);
+    return response;
+  } catch (error) {
+    console.log("error: ", error);
+    return false;
+  }
+};
+
 export {
   fetchOrganizationByUser,
   createOrganization,
@@ -265,4 +276,5 @@ export {
   deleteRoom,
   updateRoom,
   toggleRoomStatus,
+  getAllBookings,
 };
