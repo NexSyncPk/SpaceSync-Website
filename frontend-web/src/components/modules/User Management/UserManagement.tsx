@@ -1,13 +1,5 @@
-import React, { useState } from "react";
-import {
-  Users,
-  Search,
-  UserPlus,
-  Edit,
-  Trash2,
-  Shield,
-  Calendar,
-} from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Users, Search, Edit, Trash2, Shield, Copy, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,119 +8,59 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import toast from "react-hot-toast";
 import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
+import { useSelector } from "react-redux";
+import {
+  deleteUserFromOrg,
+  demoteToEmployee,
+  getOrganizationMemebers,
+  promoteToAdmin,
+} from "@/api/services/userService";
 
-// User validation schema
-const userSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().min(1, "Phone is required"),
-  department: z.string().min(1, "Department is required"),
-  position: z.string().min(1, "Position is required"),
-  role: z.enum(["user", "admin"]),
-});
-
-type UserFormData = z.infer<typeof userSchema>;
-
-// User interface
+// User interface based on backend structure
 interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone: string;
   department: string;
   position: string;
-  role: "user" | "admin";
-  isActive: boolean;
-  joinDate: string;
-  bookingCount: number;
-  lastLogin: string;
+  role: "employee" | "admin";
+  createdAt: string;
+  updatedAt: string;
+  organizationId: string;
 }
 
-// Mock user data
-const mockUsers: User[] = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john.doe@company.com",
-    phone: "03123456789",
-    department: "Engineering",
-    position: "Software Engineer",
-    role: "user",
-    isActive: true,
-    joinDate: "2024-01-15",
-    bookingCount: 15,
-    lastLogin: "2024-07-07T10:30:00Z",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane.smith@company.com",
-    phone: "03187654321",
-    department: "Marketing",
-    position: "Marketing Manager",
-    role: "user",
-    isActive: true,
-    joinDate: "2024-02-20",
-    bookingCount: 8,
-    lastLogin: "2024-07-06T14:15:00Z",
-  },
-  {
-    id: 3,
-    name: "Mike Johnson",
-    email: "mike.johnson@company.com",
-    phone: "03191234567",
-    department: "HR",
-    position: "HR Director",
-    role: "admin",
-    isActive: true,
-    joinDate: "2023-11-10",
-    bookingCount: 25,
-    lastLogin: "2024-07-07T09:00:00Z",
-  },
-  {
-    id: 4,
-    name: "Sarah Wilson",
-    email: "sarah.wilson@company.com",
-    phone: "03176543210",
-    department: "Sales",
-    position: "Sales Representative",
-    role: "user",
-    isActive: false,
-    joinDate: "2024-03-05",
-    bookingCount: 3,
-    lastLogin: "2024-06-30T16:45:00Z",
-  },
-];
-
 const UserManagement: React.FC = () => {
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isPromoting, setIsPromoting] = useState(false);
+  const [isDemoting, setIsDemoting] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<UserFormData>({
-    resolver: zodResolver(userSchema),
-    defaultValues: {
-      role: "user",
-    },
-  });
+  const user = useSelector((state: any) => state.auth.user);
+  const organization = useSelector((state: any) => state.organization.current);
+
+  // Get invite key from Redux state
+  const inviteKey = user?.Organization?.inviteKey || "";
+
+  // Copy invite key to clipboard
+  const copyInviteKey = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteKey);
+      toast.success("Invite key copied to clipboard!");
+    } catch (error) {
+      console.error("Error copying to clipboard:", error);
+      toast.error("Failed to copy invite key");
+    }
+  };
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
@@ -137,47 +69,80 @@ const UserManagement: React.FC = () => {
       user.department.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesRole = filterRole === "all" || user.role === filterRole;
-    const matchesStatus =
-      filterStatus === "all" ||
-      (filterStatus === "active" && user.isActive) ||
-      (filterStatus === "inactive" && !user.isActive);
 
-    return matchesSearch && matchesRole && matchesStatus;
+    return matchesSearch && matchesRole;
   });
 
-  const handleAddUser = (data: UserFormData) => {
-    const newUser: User = {
-      id: users.length + 1,
-      ...data,
-      isActive: true,
-      joinDate: new Date().toISOString().split("T")[0],
-      bookingCount: 0,
-      lastLogin: new Date().toISOString(),
-    };
-    setUsers([...users, newUser]);
-    toast.success("User added successfully!");
-    setIsAddModalOpen(false);
-    reset();
-  };
-
-  const handleEditUser = (data: UserFormData) => {
-    if (selectedUser) {
-      const updatedUser: User = {
-        ...selectedUser,
-        ...data,
-      };
-      setUsers(
-        users.map((user) => (user.id === selectedUser.id ? updatedUser : user))
-      );
-      toast.success("User updated successfully!");
-      setIsEditModalOpen(false);
-      setSelectedUser(null);
-      reset();
+  const fetchOrgUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await getOrganizationMemebers(organization?.id);
+      if (response && typeof response === "object" && "data" in response) {
+        // Handle the response structure based on your API
+        const userData =
+          response.data?.data?.users || response.data?.data || response.data;
+        setUsers(Array.isArray(userData) ? userData : []);
+        console.log("Fetched users:", userData);
+      } else {
+        setUsers([]);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast.error("Failed to fetch users");
+      setUsers([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeleteUser = (userId: number) => {
+  useEffect(() => {
+    if (organization?.id) {
+      fetchOrgUsers();
+    }
+  }, [organization?.id]);
+
+  const handlePromoteToAdmin = async (userId: string) => {
+    setIsPromoting(true);
+    try {
+      // TODO: Replace with actual API call to promote user to admin
+      await promoteToAdmin(userId);
+      toast.success("User promoted to admin successfully!");
+      fetchOrgUsers();
+      setIsEditModalOpen(false);
+      setSelectedUser(null);
+    } catch (error) {
+      console.error("Error promoting user:", error);
+      // Backend will handle if user is already admin
+      toast.error("Failed to promote user");
+    } finally {
+      setIsPromoting(false);
+    }
+  };
+
+  const handleDemoteToEmployee = async (userId: string) => {
+    setIsDemoting(true);
+    try {
+      // TODO: Replace with actual API call to demote user to employee
+      await demoteToEmployee(userId);
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      toast.success("User demoted to employee successfully!");
+      fetchOrgUsers();
+      setIsEditModalOpen(false);
+      setSelectedUser(null);
+    } catch (error) {
+      console.error("Error demoting user:", error);
+      // Backend will handle if user is already employee
+      toast.error("Failed to demote user");
+    } finally {
+      setIsDemoting(false);
+    }
+  };
+
+  const handleDeleteUser = (userId: string) => {
     const user = users.find((u) => u.id === userId);
+    console.log(user);
     if (user) {
       setUserToDelete(user);
       setIsDeleteModalOpen(true);
@@ -188,38 +153,26 @@ const UserManagement: React.FC = () => {
     if (!userToDelete) return;
 
     setIsDeleting(true);
+    console.log(userToDelete?.id);
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setUsers(users.filter((user) => user.id !== userToDelete.id));
+      // TODO: Replace with actual API call
+      await deleteUserFromOrg(userToDelete.id);
       toast.success("User deleted successfully!");
+      fetchOrgUsers();
       setIsDeleteModalOpen(false);
       setUserToDelete(null);
     } catch (error) {
+      console.error("Error deleting user:", error);
       toast.error("Failed to delete user. Please try again.");
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const handleToggleStatus = (userId: number) => {
-    setUsers(
-      users.map((user) =>
-        user.id === userId ? { ...user, isActive: !user.isActive } : user
-      )
-    );
-    toast.success("User status updated!");
-  };
+  // Remove the toggle status function since we don't have isActive field
 
   const openEditModal = (user: User) => {
     setSelectedUser(user);
-    setValue("name", user.name);
-    setValue("email", user.email);
-    setValue("phone", user.phone);
-    setValue("department", user.department);
-    setValue("position", user.position);
-    setValue("role", user.role);
     setIsEditModalOpen(true);
   };
 
@@ -233,18 +186,11 @@ const UserManagement: React.FC = () => {
             Manage user accounts and permissions
           </p>
         </div>
-        <Button
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2"
-        >
-          <UserPlus size={16} />
-          Add New User
-        </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 place-items-center ">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-9/12">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Users</p>
@@ -253,18 +199,7 @@ const UserManagement: React.FC = () => {
             <Users className="h-6 w-6 text-blue-600" />
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Active Users</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {users.filter((u) => u.isActive).length}
-              </p>
-            </div>
-            <Calendar className="h-6 w-6 text-green-600" />
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-9/12">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Admins</p>
@@ -275,19 +210,44 @@ const UserManagement: React.FC = () => {
             <Shield className="h-6 w-6 text-purple-600" />
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Total Bookings
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {users.reduce((sum, u) => sum + u.bookingCount, 0)}
-              </p>
-            </div>
-            <Calendar className="h-6 w-6 text-orange-600" />
+      </div>
+
+      {/* Invite Key Section */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Key className="h-5 w-5 text-blue-600" />
+              Organization Invite Key
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Share this key with new users to join your organization
+            </p>
           </div>
         </div>
+
+        {inviteKey ? (
+          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border">
+            <div className="flex-1 font-mono text-sm bg-white p-3 rounded border border-gray-200 text-gray-700">
+              {inviteKey}
+            </div>
+            <Button
+              onClick={copyInviteKey}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 whitespace-nowrap"
+            >
+              <Copy size={16} />
+              Copy
+            </Button>
+          </div>
+        ) : (
+          <div className="p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center">
+            <p className="text-gray-500 text-sm">
+              No invite key available for this organization
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -313,16 +273,7 @@ const UserManagement: React.FC = () => {
           >
             <option value="all">All Roles</option>
             <option value="admin">Admin</option>
-            <option value="user">User</option>
-          </select>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="employee">Employee</option>
           </select>
         </div>
       </div>
@@ -334,252 +285,113 @@ const UserManagement: React.FC = () => {
             Users ({filteredUsers.length})
           </h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="text-left p-4 font-medium">User</th>
-                <th className="text-left p-4 font-medium">Contact</th>
-                <th className="text-left p-4 font-medium">Department</th>
-                <th className="text-left p-4 font-medium">Role</th>
-                <th className="text-left p-4 font-medium">Status</th>
-                <th className="text-left p-4 font-medium">Last Login</th>
-                <th className="text-left p-4 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="border-b hover:bg-gray-50">
-                  <td className="p-4">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-sm font-medium text-blue-600">
-                            {user.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {user.name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {user.bookingCount} bookings
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="text-sm text-gray-900">{user.email}</div>
-                    <div className="text-sm text-gray-500">{user.phone}</div>
-                  </td>
-                  <td className="p-4">
-                    <div className="text-sm text-gray-900">
-                      {user.department}
-                    </div>
-                    <div className="text-sm text-gray-500">{user.position}</div>
-                  </td>
-                  <td className="p-4">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.role === "admin"
-                          ? "bg-purple-100 text-purple-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {user.role === "admin" && (
-                        <Shield className="w-3 h-3 mr-1" />
-                      )}
-                      {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.isActive
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {user.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <div className="text-sm">
-                      {new Date(user.lastLogin).toLocaleDateString()}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {new Date(user.lastLogin).toLocaleTimeString()}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditModal(user)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleToggleStatus(user.id)}
-                      >
-                        {user.isActive ? "Deactivate" : "Activate"}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteUser(user.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
+        {loading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading users...</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b bg-gray-50">
+                  <th className="text-left p-4 font-medium">User</th>
+                  <th className="text-left p-4 font-medium">Contact</th>
+                  <th className="text-left p-4 font-medium">Department</th>
+                  <th className="text-left p-4 font-medium">Role</th>
+                  <th className="text-left p-4 font-medium">Joined</th>
+                  <th className="text-left p-4 font-medium">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {filteredUsers.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No users found matching your criteria.
+              </thead>
+              <tbody>
+                {filteredUsers.map((user) => (
+                  <tr key={user.id} className="border-b hover:bg-gray-50">
+                    <td className="p-4">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span className="text-sm font-medium text-blue-600">
+                              {user.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {user.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {user.position}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="text-sm text-gray-900">{user.email}</div>
+                      <div className="text-sm text-gray-500">{user.phone}</div>
+                    </td>
+                    <td className="p-4">
+                      <div className="text-sm text-gray-900">
+                        {user.department}
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          user.role === "admin"
+                            ? "bg-purple-100 text-purple-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {user.role === "admin" && (
+                          <Shield className="w-3 h-3 mr-1" />
+                        )}
+                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="text-sm">
+                        {new Date(user.createdAt).toLocaleDateString()}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(user.createdAt).toLocaleTimeString()}
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditModal(user)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteUser(user.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filteredUsers.length === 0 && !loading && (
+              <div className="text-center py-8 text-gray-500">
+                No users found matching your criteria.
+              </div>
+            )}
           </div>
         )}
       </div>
-
-      {/* Add User Modal */}
-      <Dialog
-        open={isAddModalOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            reset();
-          }
-          setIsAddModalOpen(open);
-        }}
-      >
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit(handleAddUser)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name
-                </label>
-                <input
-                  {...register("name")}
-                  placeholder="Enter full name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  {...register("email")}
-                  placeholder="Enter email address"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email.message}</p>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <input
-                  {...register("phone")}
-                  placeholder="Enter phone number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.phone && (
-                  <p className="text-sm text-red-500">{errors.phone.message}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
-                </label>
-                <input
-                  {...register("department")}
-                  placeholder="Enter department"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.department && (
-                  <p className="text-sm text-red-500">
-                    {errors.department.message}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Position
-                </label>
-                <input
-                  {...register("position")}
-                  placeholder="Enter position"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.position && (
-                  <p className="text-sm text-red-500">
-                    {errors.position.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role
-                </label>
-                <select
-                  {...register("role")}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </select>
-                {errors.role && (
-                  <p className="text-sm text-red-500">{errors.role.message}</p>
-                )}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  reset();
-                  setIsAddModalOpen(false);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Adding..." : "Add User"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {/* Edit User Modal */}
       <Dialog
         open={isEditModalOpen}
         onOpenChange={(open) => {
           if (!open) {
-            reset();
             setSelectedUser(null);
           }
           setIsEditModalOpen(open);
@@ -587,117 +399,98 @@ const UserManagement: React.FC = () => {
       >
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
+            <DialogTitle>User Role Management</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(handleEditUser)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+
+          {/* Display user information */}
+          <div className="bg-gray-50 p-4 rounded-lg border">
+            <h4 className="font-medium text-gray-900 mb-3">User Information</h4>
+            <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name
-                </label>
-                <input
-                  {...register("name")}
-                  placeholder="Enter full name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
-                )}
+                <span className="text-gray-600">Name:</span>
+                <p className="font-medium">{selectedUser?.name}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  {...register("email")}
-                  placeholder="Enter email address"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email.message}</p>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <input
-                  {...register("phone")}
-                  placeholder="Enter phone number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.phone && (
-                  <p className="text-sm text-red-500">{errors.phone.message}</p>
-                )}
+                <span className="text-gray-600">Email:</span>
+                <p className="font-medium">{selectedUser?.email}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
-                </label>
-                <input
-                  {...register("department")}
-                  placeholder="Enter department"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.department && (
-                  <p className="text-sm text-red-500">
-                    {errors.department.message}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Position
-                </label>
-                <input
-                  {...register("position")}
-                  placeholder="Enter position"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.position && (
-                  <p className="text-sm text-red-500">
-                    {errors.position.message}
-                  </p>
-                )}
+                <span className="text-gray-600">Phone:</span>
+                <p className="font-medium">{selectedUser?.phone}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role
-                </label>
-                <select
-                  {...register("role")}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <span className="text-gray-600">Department:</span>
+                <p className="font-medium">{selectedUser?.department}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Position:</span>
+                <p className="font-medium">{selectedUser?.position}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Current Role:</span>
+                <p
+                  className={`font-medium ${
+                    selectedUser?.role === "admin"
+                      ? "text-purple-600"
+                      : "text-gray-700"
+                  }`}
                 >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </select>
-                {errors.role && (
-                  <p className="text-sm text-red-500">{errors.role.message}</p>
-                )}
+                  {selectedUser?.role === "admin" && (
+                    <Shield className="w-3 h-3 inline mr-1" />
+                  )}
+                  {selectedUser?.role
+                    ? selectedUser.role.charAt(0).toUpperCase() +
+                      selectedUser.role.slice(1)
+                    : ""}
+                </p>
               </div>
             </div>
-            <DialogFooter>
+          </div>
+
+          {/* Role Action Buttons */}
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600">
+              Choose an action to change this user's role:
+            </p>
+
+            {selectedUser?.role === "employee" ? (
               <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  reset();
-                  setSelectedUser(null);
-                  setIsEditModalOpen(false);
-                }}
+                onClick={() =>
+                  selectedUser && handlePromoteToAdmin(selectedUser.id)
+                }
+                disabled={isPromoting}
+                className="w-full flex items-center justify-center gap-2"
               >
-                Cancel
+                <Shield size={16} />
+                {isPromoting ? "Promoting..." : "Promote to Admin"}
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Updating..." : "Update User"}
+            ) : (
+              <Button
+                onClick={() =>
+                  selectedUser && handleDemoteToEmployee(selectedUser.id)
+                }
+                disabled={isDemoting}
+                variant="destructive"
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <Users size={16} />
+                {isDemoting ? "Demoting..." : "Demote to Employee"}
               </Button>
-            </DialogFooter>
-          </form>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setSelectedUser(null);
+                setIsEditModalOpen(false);
+              }}
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

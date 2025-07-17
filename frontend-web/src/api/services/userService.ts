@@ -14,6 +14,9 @@ import {
   ROOM_STATUS,
   ROOM_UPDATE,
   RESERVATIONS,
+  ADMIN_USER_PROMOTE,
+  ADMIN_USER_DEMOTE,
+  ADMIN_USER_REMOVE,
 } from "../endpoints";
 import api from "../interceptor";
 import { store } from "@/store/store";
@@ -181,6 +184,36 @@ const updateProfile = (data: any) => {
   }
 };
 
+const promoteToAdmin = (userId: string) => {
+  try {
+    const response = api.put(ADMIN_USER_PROMOTE(userId));
+    return response;
+  } catch (error) {
+    console.log("Error: ", error);
+    return false;
+  }
+};
+
+const demoteToEmployee = (userId: string) => {
+  try {
+    const response = api.put(ADMIN_USER_DEMOTE(userId));
+    return response;
+  } catch (error) {
+    console.log("Error: ", error);
+    return false;
+  }
+};
+
+const deleteUserFromOrg = (userId: string) => {
+  try {
+    const response = api.delete(ADMIN_USER_REMOVE(userId));
+    return response;
+  } catch (error) {
+    console.log("Error: ", error);
+    return false;
+  }
+};
+
 const getOrganizationMemebers = async (organizationId: string) => {
   try {
     const response = api.get(ORGANIZATION_USERS(organizationId));
@@ -277,4 +310,7 @@ export {
   updateRoom,
   toggleRoomStatus,
   getAllBookings,
+  promoteToAdmin,
+  demoteToEmployee,
+  deleteUserFromOrg,
 };

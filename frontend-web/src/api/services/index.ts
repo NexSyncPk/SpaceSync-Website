@@ -14,6 +14,9 @@ export {
   toggleRoomStatus,
   updateRoom,
   getAllBookings,
+  promoteToAdmin,
+  demoteToEmployee,
+  deleteUserFromOrg,
 } from "./userService";
 
 export {
