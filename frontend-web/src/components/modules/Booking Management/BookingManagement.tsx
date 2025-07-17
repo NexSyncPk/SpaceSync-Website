@@ -35,8 +35,8 @@ const BookingManagement: React.FC = () => {
 
   const filteredBookings = (allBookings || []).filter((booking: any) => {
     const matchesSearch =
-      booking.meetingTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.meetingTitle?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+      booking.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
       booking.department?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =

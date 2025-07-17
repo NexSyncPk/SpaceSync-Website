@@ -168,6 +168,7 @@ const CreateMeetingForm: React.FC = () => {
     register,
     handleSubmit,
     setValue,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<MeetingFormData>({
     resolver: zodResolver(meetingSchema),
@@ -193,6 +194,8 @@ const CreateMeetingForm: React.FC = () => {
     handleRequirementToggle,
     handleRoomSelect,
     handleAttendeesChange,
+    setRequirements,
+    setSelectedRoom,
   } = useReqAndRoom([], internalAttendees.length || 1);
 
   // Update attendee count when selected members change
@@ -303,13 +306,17 @@ const CreateMeetingForm: React.FC = () => {
 
     try {
       await createReservation(meetingData);
-      toast.success(
-        `Meeting "${data.title}" created successfully!\nRoom: ${selectedRoom.name}\nMembers: ${internalAttendees.length}\nDate: ${data.meetingDate}\nTime: ${data.startTime} - ${data.endTime}`,
-        { duration: 4000 }
-      );
+
+      // Reset all form states after successful submission
+      reset(); // Reset form fields
+      setInternalAttendees([]); // Clear selected members
+      setShowMemberDropdown(false); // Close dropdown
+      setRequirements([]); // Clear selected requirements
+      setSelectedRoom(null); // Clear selected room
+
+      // Show success message
     } catch (error) {
       console.log(error);
-      toast.error("Failed to create meeting. Please try again.");
     }
   };
 

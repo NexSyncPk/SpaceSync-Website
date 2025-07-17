@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { Reservation, updateReservation } from "../../../api/services/bookingService";
+import {
+  Reservation,
+  updateReservation,
+} from "../../../api/services/bookingService";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { updateBooking } from "../../../store/slices/bookingSlice";
@@ -10,8 +13,11 @@ interface EditBookingModalProps {
   booking: Reservation;
 }
 
-
-const EditBookingModal: React.FC<EditBookingModalProps> = ({ isOpen, onClose, booking }) => {
+const EditBookingModal: React.FC<EditBookingModalProps> = ({
+  isOpen,
+  onClose,
+  booking,
+}) => {
   const [form, setForm] = useState({
     title: booking.title || "",
     agenda: booking.agenda || "",
@@ -23,7 +29,9 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({ isOpen, onClose, bo
 
   if (!isOpen) return null;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -45,7 +53,10 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({ isOpen, onClose, bo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+      <div
+        className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative"
+        style={{ maxHeight: "90vh", overflowY: "auto" }}
+      >
         <button
           className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
           onClick={onClose}
@@ -76,9 +87,11 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({ isOpen, onClose, bo
               rows={2}
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-col">
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Start Time</label>
+              <label className="block text-sm font-medium mb-1">
+                Start Time
+              </label>
               <input
                 type="datetime-local"
                 name="startTime"
