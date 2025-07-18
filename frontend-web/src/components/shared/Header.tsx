@@ -48,12 +48,13 @@ const Header: React.FC = () => {
   const navItems = [
     { path: "/", icon: Home, label: "Book Meeting" },
     { path: "/bookings", icon: BookOpen, label: "My Bookings" },
+    { path: "/calendar", icon: Calendar, label: "Calendar" },
     { path: "/profile", icon: User, label: "Profile" },
   ];
 
   // Add dashboard option for admin users
   if (isAdmin) {
-    navItems.splice(1, 0, {
+    navItems.splice(4, 0, {
       path: "/admin/dashboard",
       icon: BarChart3,
       label: "Dashboard",
@@ -70,7 +71,7 @@ const Header: React.FC = () => {
           </div>
 
           {/* Navigation (Desktop) */}
-          <nav className="hidden md:flex space-x-5">
+          <nav className="hidden lg:flex space-x-5">
             {navItems.map(({ path, icon: Icon, label }) => (
               <Link
                 key={path}
@@ -88,7 +89,7 @@ const Header: React.FC = () => {
           </nav>
 
           {/* User Info & Logout (Desktop) */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-4">
             <button
               onClick={handleLogout}
               className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-600 hover:text-white transition-colors"
@@ -99,7 +100,7 @@ const Header: React.FC = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          <div className="lg:hidden flex items-center">
             <button
               className="text-white hover:text-blue-200 focus:outline-none"
               aria-label="Toggle menu"

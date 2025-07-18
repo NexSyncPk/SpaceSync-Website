@@ -13,6 +13,7 @@ import BookingManagementView from "@/views/BookingManagementView";
 import UserManagementView from "@/views/UserManagementView";
 import Organization from "@/components/modules/Organization/Organization";
 import AdminDashboardView from "@/views/AdminDashboardView";
+import CalendarView from "@/views/CalendarView";
 
 const Routes = () => {
   return (
@@ -55,6 +56,16 @@ const Routes = () => {
           <ProtectedRoute>
             <UserLayout>
               <BookingView />
+            </UserLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/calendar"
+        element={
+          <ProtectedRoute>
+            <UserLayout>
+              <CalendarView />
             </UserLayout>
           </ProtectedRoute>
         }

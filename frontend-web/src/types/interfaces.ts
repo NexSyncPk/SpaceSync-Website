@@ -95,3 +95,32 @@ export interface MeetingRequestData {
   roomId: string; // Changed from number to string
   status?: "pending" | "approved" | "completed" | "cancelled";
 }
+
+export interface Meeting {
+  id: string;
+  startTime: string;
+  endTime: string;
+  agenda: string;
+  title: string;
+  status: "confirmed" | "pending" | "cancelled" | "completed";
+  internalAttendees: string[];
+  userId: string;
+  roomId: string;
+  User: {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    department: string;
+  };
+  Room: {
+    id: string;
+    name: string;
+    capacity: number;
+    displayProjector: boolean;
+    displayWhiteboard: boolean;
+    cateringAvailable: boolean;
+    videoConferenceAvailable: boolean;
+  };
+  externalAttendees: any[];
+}

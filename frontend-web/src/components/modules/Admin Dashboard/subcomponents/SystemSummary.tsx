@@ -8,6 +8,7 @@ interface SystemSummaryProps {
     totalUsers: number;
     utilizationRate: number;
     todaysBookings: number;
+    avgUtilization: number;
   };
   loading?: boolean;
 }
@@ -35,6 +36,18 @@ const SystemSummary: React.FC<SystemSummaryProps> = ({ stats, loading }) => {
           <span className="text-sm text-gray-600">Today's Bookings</span>
           <span className="font-medium">
             {loading ? "..." : stats?.todaysBookings || 0}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-600">Completed Bookings</span>
+          <span className="font-medium">
+            {loading ? "..." : stats?.completedBookings || 0}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-600">Average Utilization</span>
+          <span className="font-medium">
+            {loading ? "..." : `${stats?.avgUtilization || 0}%`}
           </span>
         </div>
       </div>
