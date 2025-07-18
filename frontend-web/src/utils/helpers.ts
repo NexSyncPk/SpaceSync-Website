@@ -7,7 +7,7 @@ export const getStatusColor = (status: string) => {
     case "completed":
       return "bg-blue-100 border-blue-200";
     case "cancelled":
-        return "bg-red-100 border-red-200"
+      return "bg-red-100 border-red-200";
     default:
       return "bg-gray-100 border-gray-200";
   }
@@ -28,6 +28,20 @@ export const getStatusTextColor = (status: string) => {
   }
 };
 
+export const getPriorityColor = (status: string) => {
+  switch (status) {
+    case "pending":
+      return "border-l-yellow-500";
+    case "confirmed":
+      return "border-l-green-500";
+    case "completed":
+      return "border-l-blue-500";
+    case "cancelled":
+      return "border-l-red-500";
+    default:
+      return "border-l-gray-500";
+  }
+};
 
 export const formatSelectedDate = (selectedDate: Date) => {
   return selectedDate.toLocaleDateString("en-US", {
@@ -38,23 +52,23 @@ export const formatSelectedDate = (selectedDate: Date) => {
   });
 };
 
-  // Helper to convert 12-hour time to 24-hour format (for input type="time")
-  export function convertTo24Hour(timeStr?: string) {
-    if (!timeStr) return "";
-    // Handles both "2:00 PM" and "14:00" cases
-    if (/AM|PM/i.test(timeStr)) {
-      const [time, modifier] = timeStr.split(" ");
-      let [hours, minutes] = time.split(":");
-      if (hours === "12") hours = "00";
-      if (modifier.toUpperCase() === "PM" && hours !== "12")
-        hours = String(parseInt(hours, 10) + 12);
-      return `${hours.padStart(2, "0")}:${minutes}`;
-    }
-    // Already 24-hour
-    return timeStr.length === 5 ? timeStr : "";
+// Helper to convert 12-hour time to 24-hour format (for input type="time")
+export function convertTo24Hour(timeStr?: string) {
+  if (!timeStr) return "";
+  // Handles both "2:00 PM" and "14:00" cases
+  if (/AM|PM/i.test(timeStr)) {
+    const [time, modifier] = timeStr.split(" ");
+    let [hours, minutes] = time.split(":");
+    if (hours === "12") hours = "00";
+    if (modifier.toUpperCase() === "PM" && hours !== "12")
+      hours = String(parseInt(hours, 10) + 12);
+    return `${hours.padStart(2, "0")}:${minutes}`;
   }
+  // Already 24-hour
+  return timeStr.length === 5 ? timeStr : "";
+}
 
-import { store } from '@/store/store';
+import { store } from "@/store/store";
 
 // Get token from Redux store
 export const getToken = (): string | null => {
@@ -62,7 +76,7 @@ export const getToken = (): string | null => {
     const state = store.getState();
     return state.auth?.token || null;
   } catch (error) {
-    console.error('Error getting token from Redux store:', error);
+    console.error("Error getting token from Redux store:", error);
     return null;
   }
 };
@@ -71,15 +85,20 @@ export const getToken = (): string | null => {
 export const getUserFromToken = (token: string) => {
   try {
     // Basic JWT token parsing (for client-side use only)
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map(function (c) {
+          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join("")
+    );
+
     return JSON.parse(jsonPayload);
   } catch (error) {
-    console.error('Error parsing token:', error);
+    console.error("Error parsing token:", error);
     return null;
   }
 };
@@ -88,11 +107,51 @@ export const isTokenExpired = (token: string): boolean => {
   try {
     const payload = getUserFromToken(token);
     if (!payload || !payload.exp) return true;
-    
+
     const currentTime = Date.now() / 1000;
     return payload.exp < currentTime;
   } catch (error) {
-    console.error('Error checking token expiration:', error);
+    console.error("Error checking token expiration:", error);
     return true;
+  }
+};
+
+export const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+export const formatTime = (dateString: string) => {
+  return new Date(dateString).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+export const getAmenityBadges = (room: any) => {
+  const amenities = [];
+  if (room?.displayProjector) amenities.push("Projector");
+  if (room?.displayWhiteboard) amenities.push("Whiteboard");
+  if (room?.cateringAvailable) amenities.push("Catering");
+  if (room?.videoConferenceAvailable) amenities.push("Video Conference");
+  return amenities;
+};
+
+export const getStatusColor_Admin = (status: string) => {
+  switch (status) {
+    case "pending":
+      return "bg-yellow-100 text-yellow-600";
+    case "confirmed":
+      return "bg-green-100 text-green-600";
+    case "completed":
+      return "bg-blue-100 text-blue-600";
+    case "cancelled":
+      return "bg-red-100 text-red-600";
+    default:
+      return "bg-gray-100 text-gray-600";
   }
 };

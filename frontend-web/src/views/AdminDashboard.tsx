@@ -7,11 +7,10 @@ import {
   TrendingUp,
   CheckCircle,
   AlertCircle,
-  BarChart3,
-  Settings,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { getStatusColor } from "@/utils/helpers";
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -64,28 +63,24 @@ const AdminDashboard: React.FC = () => {
       value: stats.totalBookings.toString(),
       icon: Calendar,
       color: "bg-blue-500",
-      change: "+12%",
     },
     {
       label: "Active Bookings",
       value: stats.activeBookings.toString(),
       icon: CheckCircle,
       color: "bg-green-500",
-      change: "+8%",
     },
     {
       label: "Pending Approval",
       value: stats.pendingBookings.toString(),
       icon: AlertCircle,
       color: "bg-yellow-500",
-      change: "+3%",
     },
     {
       label: "Room Utilization",
       value: `${stats.utilizationRate}%`,
       icon: TrendingUp,
       color: "bg-purple-500",
-      change: "+5%",
     },
   ];
 
@@ -124,21 +119,6 @@ const AdminDashboard: React.FC = () => {
     },
   ];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "text-yellow-600 bg-yellow-100";
-      case "approved":
-        return "text-green-600 bg-green-100";
-      case "completed":
-        return "text-blue-600 bg-blue-100";
-      case "maintenance":
-        return "text-red-600 bg-red-100";
-      default:
-        return "text-gray-600 bg-gray-100";
-    }
-  };
-
   return (
     <div className="px-4 sm:px-6 lg:px-8">
       {/* Header */}
@@ -171,7 +151,6 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-2xl font-bold text-gray-900 mt-2">
                   {stat.value}
                 </p>
-                <p className="text-sm text-green-600 mt-1">{stat.change}</p>
               </div>
               <div className={`p-3 rounded-lg ${stat.color}`}>
                 <stat.icon className="h-6 w-6 text-white" />
@@ -244,7 +223,7 @@ const AdminDashboard: React.FC = () => {
             </h3>
             <div className="space-y-3">
               <Button
-                onClick={() => navigate("/admin/rooms/new")}
+                onClick={() => navigate("/admin/rooms/")}
                 className="w-full justify-start"
                 variant="outline"
               >
@@ -260,21 +239,21 @@ const AdminDashboard: React.FC = () => {
                 Manage Users
               </Button>
               <Button
-                onClick={() => navigate("/admin/analytics")}
+                onClick={() => navigate("/admin/bookings")}
                 className="w-full justify-start"
                 variant="outline"
               >
-                <BarChart3 size={16} className="mr-2" />
-                View Analytics
+                <Calendar size={16} className="mr-2" />
+                Manage Bookings
               </Button>
-              <Button
+              {/* <Button
                 onClick={() => navigate("/admin/settings")}
                 className="w-full justify-start"
                 variant="outline"
               >
                 <Settings size={16} className="mr-2" />
                 System Settings
-              </Button>
+              </Button> */}
             </div>
           </div>
 
