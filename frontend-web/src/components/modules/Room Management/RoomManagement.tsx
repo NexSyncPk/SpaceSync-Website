@@ -350,7 +350,7 @@ const RoomManagement: React.FC = () => {
                             </span>
                           ))}
                           {amenities.length > 3 && (
-                            <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
+                            <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded ">
                               +{amenities.length - 3} more
                             </span>
                           )}

@@ -153,6 +153,7 @@ const UserManagement: React.FC = () => {
     if (!userToDelete) return;
 
     setIsDeleting(true);
+
     console.log(userToDelete?.id);
     try {
       // TODO: Replace with actual API call

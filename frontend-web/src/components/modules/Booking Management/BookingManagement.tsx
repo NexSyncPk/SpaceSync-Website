@@ -67,7 +67,7 @@ const BookingManagement: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching reservations:", error);
-      toast.error("Failed to fetch reservations");
+      // toast.error("Failed to fetch reservations");
       setAllBookings([]);
     } finally {
       setLoading(false);
