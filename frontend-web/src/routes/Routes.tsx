@@ -8,11 +8,11 @@ import BookingView from "@/views/BookingView";
 import LoginView from "@/views/LoginView";
 import SignupView from "@/views/SignupView";
 import ProfileView from "@/views/ProfileView";
-import AdminDashboard from "@/views/AdminDashboard";
 import RoomManagementView from "@/views/RoomManagementView";
 import BookingManagementView from "@/views/BookingManagementView";
 import UserManagementView from "@/views/UserManagementView";
 import Organization from "@/components/modules/Organization/Organization";
+import AdminDashboardView from "@/views/AdminDashboardView";
 
 const Routes = () => {
   return (
@@ -86,7 +86,7 @@ const Routes = () => {
         element={
           <ProtectedRoute>
             <AdminLayout>
-              <AdminDashboard />
+              <AdminDashboardView />
             </AdminLayout>
           </ProtectedRoute>
         }
@@ -96,7 +96,7 @@ const Routes = () => {
         element={
           <ProtectedRoute>
             <AdminLayout>
-              <AdminDashboard />
+              <AdminDashboardView />
             </AdminLayout>
           </ProtectedRoute>
         }
