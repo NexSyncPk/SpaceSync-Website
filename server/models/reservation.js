@@ -3,18 +3,23 @@ const { Model, UUIDV4 } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
     class Reservation extends Model {
-        static associate(models) {  
+        static associate(models) {
             Reservation.belongsTo(models.Room, {
-                foreignKey: 'roomId',
-                onDelete: 'CASCADE'
+                foreignKey: "roomId",
+                onDelete: "CASCADE",
             });
             Reservation.belongsTo(models.User, {
-                foreignKey: 'userId',
-                onDelete: 'SET NULL'
+                foreignKey: "userId",
+                onDelete: "SET NULL",
             });
             Reservation.hasMany(models.ExternalAttendee, {
-                foreignKey: 'reservationId',
-                as: 'externalAttendees'
+                foreignKey: "reservationId",
+                as: "externalAttendees",
+            });
+            Reservation.belongsToMany(models.User, {
+                through: "ReservationAttendees",
+                as: "internalAttendees",
+                foreignKey: "reservationId",
             });
         }
     }
@@ -25,7 +30,7 @@ module.exports = (sequelize, DataTypes) => {
                 type: DataTypes.UUID,
                 primaryKey: true,
                 defaultValue: UUIDV4,
-              },
+            },
             startTime: {
                 type: DataTypes.DATE,
                 allowNull: false,
@@ -43,30 +48,30 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: false,
             },
             status: {
-                type: DataTypes.ENUM("pending", "confirmed", "cancelled", "completed"),
+                type: DataTypes.ENUM(
+                    "pending",
+                    "confirmed",
+                    "cancelled",
+                    "completed"
+                ),
                 allowNull: false,
                 defaultValue: "pending",
-            },
-            internalAttendees: {
-                type: DataTypes.ARRAY(DataTypes.UUID),
-                allowNull: true,
-                defaultValue: [],
             },
             userId: {
                 type: DataTypes.UUID,
                 allowNull: false,
                 references: {
-                    model: 'Users',
-                    key: 'id'
-                }
+                    model: "Users",
+                    key: "id",
+                },
             },
             roomId: {
                 type: DataTypes.UUID,
                 allowNull: false,
                 references: {
-                    model: 'Rooms',
-                    key: 'id'
-                }
+                    model: "Rooms",
+                    key: "id",
+                },
             },
         },
         {
