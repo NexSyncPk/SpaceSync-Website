@@ -263,11 +263,8 @@ const Meetings: React.FC<MeetingsProps> = ({
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Users className="h-4 w-4" />
                   <span>
-                    {meeting.internalAttendees.length} attendee
-                    {meeting.internalAttendees.length !== 1 ? "s" : ""}
-                    {meeting.externalAttendees.length > 0 && (
-                      <span>, {meeting.externalAttendees.length} external</span>
-                    )}
+                    {meeting.internalAttendees?.length} attendee
+                    {meeting.internalAttendees?.length !== 1 ? "s" : ""}
                   </span>
                 </div>
               </div>

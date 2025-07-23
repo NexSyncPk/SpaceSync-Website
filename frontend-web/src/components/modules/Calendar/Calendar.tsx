@@ -14,7 +14,7 @@ const Calendar: React.FC = () => {
     try {
       setLoading(true);
       const response = await getAllReservations();
-      console.log(response);
+      console.log("AAAAAAAAAAAAAA", response);
       if (response?.data) {
         // Handle both paginated and non-paginated responses
         const reservations = response.data.reservations || response.data;

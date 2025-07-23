@@ -1,30 +1,43 @@
 const BaseRepo = require("./BaseRepo");
 const { Reservation, User, Room, ExternalAttendee } = require("../models");
-const { Op, Sequelize } = require("sequelize");
+const { Op } = require("sequelize");
 
 class ReservationRepo extends BaseRepo {
     constructor() {
         super(Reservation);
     }
 
-    async getAllReservations(filters = {}, pagination = {}, organizationId = null) {
+    async getAllReservations(
+        filters = {},
+        pagination = {},
+        organizationId = null
+    ) {
         const where = { ...filters };
-        
+
         const include = [
             {
                 model: User,
-                attributes: ['id', 'name', 'email', 'phone', 'department'],
+                attributes: ["id", "name", "email", "phone", "department"],
             },
             {
                 model: Room,
-                attributes: ['id', 'name', 'capacity', 'displayProjector', 'displayWhiteboard', 'cateringAvailable', 'videoConferenceAvailable'],
-                where: organizationId ? { organizationId } : undefined
+                attributes: [
+                    "id",
+                    "name",
+                    "capacity",
+                    "displayProjector",
+                    "displayWhiteboard",
+                    "cateringAvailable",
+                    "videoConferenceAvailable",
+                ],
+                where: organizationId ? { organizationId } : undefined,
             },
             {
-                model: ExternalAttendee,
-                as: 'externalAttendees',
-                required: false
-            }
+                model: User,
+                as: "internalAttendees",
+                through: { attributes: [] },
+                attributes: ["id", "name", "email", "phone", "department"],
+            },
         ];
 
         if (pagination.limit) {
@@ -33,14 +46,14 @@ class ReservationRepo extends BaseRepo {
                 include,
                 limit: pagination.limit,
                 offset: pagination.offset,
-                order: [['startTime', 'DESC']]
+                order: [["startTime", "DESC"]],
             });
         }
 
         return await this.model.findAll({
             where,
             include,
-            order: [['startTime', 'DESC']]
+            order: [["startTime", "DESC"]],
         });
     }
 
@@ -48,23 +61,26 @@ class ReservationRepo extends BaseRepo {
         const include = [
             {
                 model: User,
-                attributes: ['id', 'name', 'email', 'phone', 'department'],
+                attributes: ["id", "name", "email", "phone", "department"],
             },
             {
                 model: Room,
-                attributes: ['id', 'name', 'capacity', 'displayProjector', 'displayWhiteboard', 'cateringAvailable', 'videoConferenceAvailable'],
-                where: organizationId ? { organizationId } : undefined
+                attributes: [
+                    "id",
+                    "name",
+                    "capacity",
+                    "displayProjector",
+                    "displayWhiteboard",
+                    "cateringAvailable",
+                    "videoConferenceAvailable",
+                ],
+                where: organizationId ? { organizationId } : undefined,
             },
-            {
-                model: ExternalAttendee,
-                as: 'externalAttendees',
-                required: false
-            }
         ];
 
         return await this.model.findOne({
             where: { id },
-            include
+            include,
         });
     }
 
@@ -72,13 +88,13 @@ class ReservationRepo extends BaseRepo {
         const include = [
             {
                 model: Room,
-                where: organizationId ? { organizationId } : undefined
-            }
+                where: organizationId ? { organizationId } : undefined,
+            },
         ];
 
         return await this.model.findAll({
             where: { status },
-            include
+            include,
         });
     }
 
@@ -88,24 +104,32 @@ class ReservationRepo extends BaseRepo {
             include: [
                 {
                     model: Room,
-                    attributes: ['id', 'name', 'capacity', 'displayProjector', 'displayWhiteboard', 'cateringAvailable', 'videoConferenceAvailable']
+                    attributes: [
+                        "id",
+                        "name",
+                        "capacity",
+                        "displayProjector",
+                        "displayWhiteboard",
+                        "cateringAvailable",
+                        "videoConferenceAvailable",
+                    ],
                 },
                 {
                     model: ExternalAttendee,
-                    as: 'externalAttendees',
-                    required: false
-                }
+                    as: "externalAttendees",
+                    required: false,
+                },
             ],
-            order: [['startTime', 'DESC']]
+            order: [["startTime", "DESC"]],
         });
     }
 
     async getReservationsByRoom(roomId, dateRange = {}) {
         const where = { roomId };
-        
+
         if (dateRange.startDate && dateRange.endDate) {
             where.startTime = {
-                [Op.between]: [dateRange.startDate, dateRange.endDate]
+                [Op.between]: [dateRange.startDate, dateRange.endDate],
             };
         }
 
@@ -114,35 +138,40 @@ class ReservationRepo extends BaseRepo {
             include: [
                 {
                     model: User,
-                    attributes: ['id', 'name', 'email', 'phone', 'department'],
-                }
+                    attributes: ["id", "name", "email", "phone", "department"],
+                },
             ],
-            order: [['startTime', 'ASC']]
+            order: [["startTime", "ASC"]],
         });
     }
 
-    async checkRoomAvailability(roomId, startTime, endTime, excludeReservationId = null) {
+    async checkRoomAvailability(
+        roomId,
+        startTime,
+        endTime,
+        excludeReservationId = null
+    ) {
         const where = {
             roomId,
-            status: { [Op.ne]: 'cancelled' },
+            status: { [Op.ne]: "cancelled" },
             [Op.or]: [
                 {
                     startTime: {
-                        [Op.between]: [startTime, endTime]
-                    }
+                        [Op.between]: [startTime, endTime],
+                    },
                 },
                 {
                     endTime: {
-                        [Op.between]: [startTime, endTime]
-                    }
+                        [Op.between]: [startTime, endTime],
+                    },
                 },
                 {
                     [Op.and]: [
                         { startTime: { [Op.lte]: startTime } },
-                        { endTime: { [Op.gte]: endTime } }
-                    ]
-                }
-            ]
+                        { endTime: { [Op.gte]: endTime } },
+                    ],
+                },
+            ],
         };
 
         if (excludeReservationId) {
@@ -161,22 +190,22 @@ class ReservationRepo extends BaseRepo {
         const include = [
             {
                 model: Room,
-                where: organizationId ? { organizationId } : undefined
+                where: organizationId ? { organizationId } : undefined,
             },
             {
                 model: User,
-                attributes: ['id', 'name', 'email']
-            }
+                attributes: ["id", "name", "email"],
+            },
         ];
 
         return await this.model.findAll({
             where: {
                 startTime: { [Op.gt]: new Date() },
-                status: { [Op.ne]: 'cancelled' }
+                status: { [Op.ne]: "cancelled" },
             },
             include,
-            order: [['startTime', 'ASC']],
-            limit
+            order: [["startTime", "ASC"]],
+            limit,
         });
     }
 }

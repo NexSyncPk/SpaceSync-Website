@@ -98,15 +98,23 @@ class ReservationController extends BaseController {
         };
 
         const reservation = await this.reservationRepo.model.create(reservationData);
-        
+        if (Array.isArray(reservationData.internalAttendees) && reservationData.internalAttendees.length > 0) {
+            const ReservationAttendees = require("../models").ReservationAttendees;
+            const attendeesData = reservationData.internalAttendees.map(userId => ({
+                reservationId: reservation.id,
+                userId
+            }));
+            await ReservationAttendees.bulkCreate(attendeesData);
+        }
+
         const reservationWithUser = await this.reservationRepo.getReservationById(reservation.id, organizationId);
-        
+
         try {
             notifyAdminNewReservation(reservationWithUser, organizationId);
         } catch (socketError) {
             console.warn("Failed to send real-time notification:", socketError);
         }
-        
+
         return this.successResponse(response, "Reservation created successfully!", reservation, 201);
     }
 
