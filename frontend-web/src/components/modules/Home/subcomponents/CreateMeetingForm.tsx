@@ -527,77 +527,7 @@ const CreateMeetingForm: React.FC = () => {
         )}
       </div>
 
-      {/* Meeting Type */}
-      {/* <div>
-        <label className="block font-semibold mb-3">Meeting Type *</label>{" "}
-        <div className="flex gap-3 flex-col md:flex-row h-fit">
-          <button
-            type="button"
-            onClick={() => {
-              setMeetingType("internal");
-              setValue("meetingType", "internal");
-            }}
-            className={`flex-1 h-12 border-2 rounded-lg transition-colors py-2 ${
-              meetingType === "internal"
-                ? "bg-blue-600 border-blue-600 text-white"
-                : "border-gray-300 text-gray-700 hover:border-blue-300"
-            }`}
-          >
-            Internal
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMeetingType("external");
-              setValue("meetingType", "external");
-            }}
-            className={`flex-1 h-12 border-2 rounded-lg transition-colors py-2 ${
-              meetingType === "external"
-                ? "bg-blue-600 border-blue-600 text-white"
-                : "border-gray-300 text-gray-700 hover:border-blue-300"
-            }`}
-          >
-            External
-          </button>
-        </div>
-        {errors.meetingType && (
-          <p className="mt-1 text-sm text-red-600">
-            {errors.meetingType.message}
-          </p>
-        )}
-      </div> */}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 md:gap-6">
-        {/* Name Input */}
-        {/* <div>
-          <label className="block font-semibold mb-2">Name *</label>
-          <input
-            type="text"
-            {...register("name")}
-            placeholder="Enter your name"
-            className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors"
-          />
-          {errors.name && (
-            <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-          )}
-        </div> */}
-
-        {/* Department Input */}
-        {/* <div>
-          <label className="block font-semibold mb-2">Department *</label>
-          <input
-            type="text"
-            {...register("department")}
-            placeholder="Enter department"
-            className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors"
-          />
-          {errors.department && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.department.message}
-            </p>
-          )}
-        </div> */}
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 md:gap-6"></div>
 
       {/* Team Agenda Input */}
       <div>
@@ -655,12 +585,20 @@ const CreateMeetingForm: React.FC = () => {
           </div>
         ) : (
           <div className="bg-gray-50 rounded-lg p-8 text-center">
-            <p className="text-gray-500 mb-2">
-              No rooms available with the selected requirements and capacity
-            </p>
-            <p className="text-sm text-gray-400">
-              Try reducing requirements or attendee count
-            </p>
+            {requirements.length !== 0 ? (
+              <>
+                <p className="text-gray-500 mb-2">
+                  No rooms available with the selected requirements and capacity
+                </p>
+                <p className="text-sm text-gray-400">
+                  Try reducing requirements or attendee count
+                </p>
+              </>
+            ) : (
+              <p className="text-gray-500 mb-2">
+                There is no Rooms in this organization till now.
+              </p>
+            )}
           </div>
         )}
       </div>

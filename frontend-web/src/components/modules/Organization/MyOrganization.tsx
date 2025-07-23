@@ -341,7 +341,7 @@ const MyOrganization: React.FC<MyOrganizationProps> = ({ onBack }) => {
                     </svg>
                     Organization Members ({userOrganization.Users.length})
                   </h4>
-                  <div className="space-y-3 h-36 overflow-auto">
+                  <div className="space-y-3 h-16 overflow-auto">
                     {userOrganization.Users.map((member: any) => (
                       <div
                         key={member.id}

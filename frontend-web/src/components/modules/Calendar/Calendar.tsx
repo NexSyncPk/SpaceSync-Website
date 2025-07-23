@@ -58,7 +58,7 @@ const Calendar: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white w-full sm:w-5/6 md:w-5/6 mx-auto p-5 rounded-lg shadow-2xl">
+    <div className="min-h-screen bg-white w-full sm:w-5/6 md:w-5/6 lg:w-4/6 mx-auto p-5 rounded-lg shadow-2xl">
       <div className="w-full max-w-6xl mx-auto px-4">
         {/* Calendar Section */}
         <ReactCalendar

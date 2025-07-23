@@ -355,10 +355,10 @@ const Meetings: React.FC<MeetingsProps> = ({
                   {/* Attendees List */}
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 mb-2">
-                      Attendees ({Attendees.length})
+                      Attendees ({meeting.internalAttendees.length})
                     </h4>
                     <div className="bg-gray-50 rounded-lg p-3 ">
-                      {Attendees.map((att, index) => (
+                      {meeting.internalAttendees.map((att: any, index) => (
                         <div
                           key={index}
                           className="flex items-center justify-between mb-2 p-2 rounded hover:bg-blue-100 transition-colors cursor-pointer  max-md:flex-col border-b-2"
@@ -369,11 +369,11 @@ const Meetings: React.FC<MeetingsProps> = ({
                               {")"}
                             </span>
                             <span className="font-medium text-gray-800 ">
-                              {att.name}
+                              {att?.name || "N/A"}
                             </span>
                           </div>
                           <span className="text-gray-500 max-sm:text-center">
-                            {att.position}
+                            {att?.position || "N/A"}
                           </span>
                         </div>
                       ))}

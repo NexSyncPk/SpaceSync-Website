@@ -69,6 +69,7 @@ export function convertTo24Hour(timeStr?: string) {
 }
 
 import { store } from "@/store/store";
+import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
 
 // Get token from Redux store
 export const getToken = (): string | null => {
@@ -153,5 +154,46 @@ export const getStatusColor_Admin = (status: string) => {
       return "bg-red-100 text-red-600";
     default:
       return "bg-gray-100 text-gray-600";
+  }
+};
+
+export const getStatusStylesBooking = (status: string) => {
+  switch (status.toLowerCase()) {
+    case "confirmed":
+    case "upcoming":
+      return {
+        bg: "bg-gradient-to-r from-green-50 to-emerald-50",
+        text: "text-green-700",
+        border: "border-green-200",
+        icon: CheckCircle,
+      };
+    case "pending":
+      return {
+        bg: "bg-gradient-to-r from-yellow-50 to-amber-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+        icon: AlertCircle,
+      };
+    case "cancelled":
+      return {
+        bg: "bg-gradient-to-r from-red-50 to-rose-50",
+        text: "text-red-700",
+        border: "border-red-200",
+        icon: XCircle,
+      };
+    case "completed":
+      return {
+        bg: "bg-gradient-to-r from-blue-50 to-indigo-50",
+        text: "text-blue-700",
+        border: "border-blue-200",
+        icon: CheckCircle,
+      };
+    default:
+      return {
+        bg: "bg-gradient-to-r from-gray-50 to-slate-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+        icon: AlertCircle,
+      };
   }
 };
