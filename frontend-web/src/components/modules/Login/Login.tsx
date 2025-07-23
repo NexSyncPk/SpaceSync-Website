@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { LoginFormData, loginSchema } from "@/schema/validationSchemas";
 import { loginSuccess, setError, setLoading } from "@/store/slices/authSlice";
 import { login } from "@/api/services/authService";
+import { registerUserWithSocket } from "@/utils/socketManager";
 
 const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -31,6 +32,12 @@ const Login: React.FC = () => {
       if (response) {
         dispatch(loginSuccess(response.data));
         console.log(response, response.data);
+
+        // Register user with socket for real-time notifications
+        if (response.data.user) {
+          registerUserWithSocket(response.data.user);
+        }
+
         reset();
         // Navigation will be handled automatically by PublicRoute when auth state changes
       }

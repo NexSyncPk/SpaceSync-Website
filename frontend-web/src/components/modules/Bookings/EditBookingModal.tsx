@@ -18,11 +18,24 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
   onClose,
   booking,
 }) => {
+  // Helper function to convert UTC time to local datetime-local format
+  const toLocalDateTime = (utcTime: string) => {
+    if (!utcTime) return "";
+    const date = new Date(utcTime);
+    // Get local time and format for datetime-local input
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   const [form, setForm] = useState({
     title: booking.title || "",
     agenda: booking.agenda || "",
-    startTime: booking.startTime || "",
-    endTime: booking.endTime || "",
+    startTime: toLocalDateTime(booking.startTime) || "",
+    endTime: toLocalDateTime(booking.endTime) || "",
   });
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
@@ -39,10 +52,21 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
     e.preventDefault();
     setLoading(true);
     try {
-      await updateReservation(booking.id, form);
+      // Convert local datetime back to UTC for API
+      const submitData = {
+        ...form,
+        startTime: form.startTime
+          ? new Date(form.startTime).toISOString()
+          : form.startTime,
+        endTime: form.endTime
+          ? new Date(form.endTime).toISOString()
+          : form.endTime,
+      };
+
+      await updateReservation(booking.id, submitData);
       toast.success("Booking updated successfully!");
       // Update Redux store with correct shape
-      dispatch(updateBooking({ id: booking.id, updates: form }));
+      dispatch(updateBooking({ id: booking.id, updates: submitData }));
       onClose();
     } catch (error: any) {
       toast.error(error?.message || "Failed to update booking");
@@ -95,7 +119,7 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
               <input
                 type="datetime-local"
                 name="startTime"
-                value={form.startTime.slice(0, 16)}
+                value={form.startTime}
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2"
                 required
@@ -106,7 +130,7 @@ const EditBookingModal: React.FC<EditBookingModalProps> = ({
               <input
                 type="datetime-local"
                 name="endTime"
-                value={form.endTime.slice(0, 16)}
+                value={form.endTime}
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2"
                 required

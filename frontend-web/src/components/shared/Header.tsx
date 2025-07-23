@@ -12,6 +12,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../../store/slices/authSlice.js";
 import toast from "react-hot-toast";
 import { clearOrganization } from "@/store/slices/organizationSlice.js";
+import { disconnectUserFromSocket } from "@/utils/socketManager";
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -28,6 +29,7 @@ const Header: React.FC = () => {
   const isAdmin = user?.role === "admin";
 
   const handleLogout = () => {
+    disconnectUserFromSocket();
     dispatch(logout());
     dispatch(clearOrganization());
     toast.success("Logged out successfully!");

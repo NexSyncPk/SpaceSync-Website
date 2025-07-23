@@ -10,6 +10,7 @@ import {
   BookingList,
   BookingViewModal,
 } from "./subcomponents";
+import socket from "@/utils/socketManager";
 
 const BookingManagement: React.FC = () => {
   const [allBookings, setAllBookings] = useState<any[]>([]);
@@ -62,6 +63,22 @@ const BookingManagement: React.FC = () => {
 
   useEffect(() => {
     fetchReservations();
+  }, []);
+
+  useEffect(() => {
+    const handleNewReservationRequest = () => {
+      fetchReservations();
+      console.log("Fetched");
+    };
+
+    // Listen for the event
+    socket.on("newReservationRequest", handleNewReservationRequest);
+    socket.on("reservationUpdated", handleNewReservationRequest);
+
+    // Cleanup on unmount
+    return () => {
+      socket.off("newReservationRequest", handleNewReservationRequest);
+    };
   }, []);
 
   const handleApproveBooking = async (bookingId: string) => {

@@ -39,6 +39,11 @@ const BookingCard: React.FC<BookingCardProps> = ({
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleDelete = async (bookingId: string) => {
+    if (!bookingId) {
+      toast.error("Invalid booking ID");
+      return;
+    }
+
     setDeleteLoading(true);
     try {
       await cancelReservation(bookingId);
@@ -46,7 +51,12 @@ const BookingCard: React.FC<BookingCardProps> = ({
       toast.success("Booking deleted successfully!");
       setIsDeleteModalOpen(false);
     } catch (error: any) {
-      toast.error(error?.message || "Failed to delete booking");
+      console.error("Delete booking error:", error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to delete booking";
+      toast.error(errorMessage);
     } finally {
       setDeleteLoading(false);
     }
@@ -183,13 +193,16 @@ const BookingCard: React.FC<BookingCardProps> = ({
           {/* Action Buttons */}
           {showActions && (
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-              <button
-                onClick={handleEdit}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-              >
-                <Edit3 className="h-4 w-4" />
-                <span className="font-medium">Edit</span>
-              </button>
+              {booking.status !== "cancelled" &&
+                booking.status !== "confirmed" && (
+                  <button
+                    onClick={handleEdit}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                    <span className="font-medium">Edit</span>
+                  </button>
+                )}
               <button
                 onClick={() => setIsDeleteModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"

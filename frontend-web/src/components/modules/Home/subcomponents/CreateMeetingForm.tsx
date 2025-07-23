@@ -321,7 +321,7 @@ const CreateMeetingForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
       {/* Meeting Title */}
       <div>
         <label className="block font-semibold mb-2">Meeting Title *</label>

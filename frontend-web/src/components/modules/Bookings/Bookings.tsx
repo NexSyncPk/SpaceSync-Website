@@ -10,16 +10,21 @@ import {
   setError,
 } from "../../../store/slices/bookingSlice";
 
+import socket from "@/utils/socketManager";
+
 const Bookings: React.FC = () => {
   const dispatch = useDispatch();
   const [bookingType, setBookingType] = useState<"upcoming" | "past">(
     "upcoming"
   );
 
-  // Get booking data from Redux store
-  const { upcomingBookings, pastBookings, isLoading, error } = useSelector(
-    (state: RootState) => state.booking
-  );
+  // Get booking data from Redux store with safety checks
+  const {
+    upcomingBookings = [],
+    pastBookings = [],
+    isLoading,
+    error,
+  } = useSelector((state: RootState) => state.booking);
 
   // Fetch bookings on component mount
   useEffect(() => {
@@ -33,16 +38,40 @@ const Bookings: React.FC = () => {
       dispatch(setError(null));
       const result = await getUserBookings();
       console.log(result);
-      dispatch(setUpcomingBookings(result.upcoming || []));
-      dispatch(setPastBookings(result.past || []));
+
+      // Ensure result has the expected structure with fallback arrays
+      const upcomingData = Array.isArray(result?.upcoming)
+        ? result.upcoming
+        : [];
+      const pastData = Array.isArray(result?.past) ? result.past : [];
+
+      dispatch(setUpcomingBookings(upcomingData));
+      dispatch(setPastBookings(pastData));
     } catch (error: any) {
-      dispatch(
-        setError(`Failed to load bookings: ${error.message || "Unknown error"}`)
-      );
+      console.error("Fetch bookings error:", error);
+      const errorMessage =
+        error?.response?.data?.message || error?.message || "Unknown error";
+      dispatch(setError(`Failed to load bookings: ${errorMessage}`));
     } finally {
       dispatch(setLoading(false));
     }
   };
+
+  useEffect(() => {
+    const handleReservationStatusUpdate = () => {
+      fetchBookings();
+      console.log("Fetched");
+    };
+
+    // Listen for the event
+    socket.on("reservationStatusUpdate", handleReservationStatusUpdate);
+
+    // Cleanup on unmount
+    return () => {
+      socket.off("reservationStatusUpdate", handleReservationStatusUpdate);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-white w-full sm:w-5/6 md:w-4/6 mx-auto p-5 rounded-lg shadow-2xl">
       <div className="w-full max-w-4xl mx-auto px-4">
@@ -82,7 +111,8 @@ const Bookings: React.FC = () => {
               } rounded-lg flex justify-center items-center transition-colors hover:border-blue-300`}
             >
               <span className="text-lg">
-                Upcoming ({upcomingBookings.length})
+                Upcoming (
+                {Array.isArray(upcomingBookings) ? upcomingBookings.length : 0})
               </span>
             </button>
             <button
@@ -93,7 +123,9 @@ const Bookings: React.FC = () => {
                   : "bg-white text-gray-700"
               } rounded-lg flex justify-center items-center transition-colors hover:border-blue-300`}
             >
-              <span className="text-lg">Past ({pastBookings.length})</span>
+              <span className="text-lg">
+                Past ({Array.isArray(pastBookings) ? pastBookings.length : 0})
+              </span>
             </button>
           </div>
         </div>
@@ -101,7 +133,7 @@ const Bookings: React.FC = () => {
         {/* Upcoming Bookings */}
         {bookingType === "upcoming" && (
           <div className="mt-6">
-            {upcomingBookings.length > 0 ? (
+            {Array.isArray(upcomingBookings) && upcomingBookings.length > 0 ? (
               upcomingBookings.map((booking: any) => (
                 <BookingCard
                   key={booking.id}
@@ -122,7 +154,7 @@ const Bookings: React.FC = () => {
         {/* Past Bookings */}
         {bookingType === "past" && (
           <div className="mt-6">
-            {pastBookings.length > 0 ? (
+            {Array.isArray(pastBookings) && pastBookings.length > 0 ? (
               pastBookings.map((booking: any) => (
                 <BookingCard
                   key={booking.id}

@@ -396,7 +396,7 @@ const MyOrganization: React.FC<MyOrganizationProps> = ({ onBack }) => {
                     </svg>
                     Available Rooms ({userOrganization.Rooms.length})
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 h-40 overflow-auto">
+                  <div className="grid grid-cols-1 md:grid-cols-2  gap-4 h-32 overflow-auto">
                     {userOrganization.Rooms.map((room: any) => (
                       <div
                         key={room.id}

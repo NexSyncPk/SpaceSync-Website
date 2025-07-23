@@ -64,6 +64,7 @@ const Calendar: React.FC = () => {
         <ReactCalendar
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
+          reservations={allBookings}
         />
         {/* Selected Date Info */}
         <div className="mt-6">

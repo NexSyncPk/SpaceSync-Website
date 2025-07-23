@@ -1,4 +1,4 @@
-const { Server } = require('socket.io');
+const { Server } = require("socket.io");
 
 let clients = new Map();
 let io = null;
@@ -13,20 +13,20 @@ function initializeSocket(server) {
     },
   });
 
-  io.on('connection', (socket) => {
+  io.on("connection", (socket) => {
     console.log("New Connection Established", socket.id);
 
-    socket.on('userRegistered', (data) => {
+    socket.on("userRegistered", (data) => {
       const { userId, role, organizationId } = data;
       clients.set(userId.toString(), {
         socketId: socket.id,
         role: role,
-        organizationId: organizationId
+        organizationId: organizationId,
       });
       console.log("Connected", { userId, role, organizationId });
     });
 
-    socket.on('disconnect', () => {
+    socket.on("disconnect", () => {
       for (const [key, value] of clients.entries()) {
         if (value.socketId === socket.id) {
           clients.delete(key);
@@ -40,14 +40,18 @@ function initializeSocket(server) {
 
 function getIO() {
   if (!io) {
-    throw new Error("Socket.io is not initialized. Call initializeSocket(server) first.");
+    throw new Error(
+      "Socket.io is not initialized. Call initializeSocket(server) first."
+    );
   }
   return io;
 }
 
 function getClients() {
   if (!clients) {
-    throw new Error("Clients map is not initialized. Ensure the server has called initializeSocket(server).");
+    throw new Error(
+      "Clients map is not initialized. Ensure the server has called initializeSocket(server)."
+    );
   }
   return clients;
 }
@@ -56,15 +60,20 @@ function getClients() {
 function notifyAdminNewReservation(reservation, organizationId) {
   try {
     if (!io) return;
-    
+
     // Find all admin users in the organization
     for (const [userId, clientData] of clients.entries()) {
-      if (clientData.role === 'admin' && clientData.organizationId === organizationId) {
-        io.to(clientData.socketId).emit('newReservationRequest', {
-          type: 'new_reservation_request',
+      if (
+        clientData.role === "admin" &&
+        clientData.organizationId === organizationId
+      ) {
+        io.to(clientData.socketId).emit("newReservationRequest", {
+          type: "new_reservation_request",
           reservation: reservation,
-          message: `New reservation request from ${reservation.User?.name || 'Employee'}`,
-          timestamp: new Date()
+          message: `New reservation request from ${
+            reservation.User?.name || "Employee"
+          }`,
+          timestamp: new Date(),
         });
       }
     }
@@ -77,14 +86,14 @@ function notifyAdminNewReservation(reservation, organizationId) {
 function notifyEmployeeReservationStatus(reservation, organizationId) {
   try {
     if (!io) return;
-    
+
     const employeeClient = clients.get(reservation.userId.toString());
     if (employeeClient && employeeClient.organizationId === organizationId) {
-      io.to(employeeClient.socketId).emit('reservationStatusUpdate', {
-        type: 'reservation_status_update',
+      io.to(employeeClient.socketId).emit("reservationStatusUpdate", {
+        type: "reservation_status_update",
         reservation: reservation,
         message: `Your reservation has been ${reservation.status}`,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
   } catch (error) {
@@ -96,15 +105,15 @@ function notifyEmployeeReservationStatus(reservation, organizationId) {
 function notifyRoomStatusChange(roomId, status, organizationId) {
   try {
     if (!io) return;
-    
+
     // Notify all users in the organization about room status change
     for (const [userId, clientData] of clients.entries()) {
       if (clientData.organizationId === organizationId) {
-        io.to(clientData.socketId).emit('roomStatusUpdate', {
-          type: 'room_status_change',
+        io.to(clientData.socketId).emit("roomStatusUpdate", {
+          type: "room_status_change",
           roomId: roomId,
           status: status, // 'occupied' or 'free'
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       }
     }
@@ -117,15 +126,15 @@ function notifyRoomStatusChange(roomId, status, organizationId) {
 function notifyRoomUpdated(room, organizationId) {
   try {
     if (!io) return;
-    
+
     // Notify all users in the organization about room updates
     for (const [userId, clientData] of clients.entries()) {
       if (clientData.organizationId === organizationId) {
-        io.to(clientData.socketId).emit('roomUpdated', {
-          type: 'room_updated',
+        io.to(clientData.socketId).emit("roomUpdated", {
+          type: "room_updated",
           room: room,
           message: `Room "${room.name}" has been updated`,
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       }
     }
@@ -138,15 +147,17 @@ function notifyRoomUpdated(room, organizationId) {
 function notifyReservationUpdated(reservation, organizationId) {
   try {
     if (!io) return;
-    
+
     // Notify all users in the organization about reservation update
     for (const [userId, clientData] of clients.entries()) {
       if (clientData.organizationId === organizationId) {
-        io.to(clientData.socketId).emit('reservationUpdated', {
-          type: 'reservation_updated',
+        io.to(clientData.socketId).emit("reservationUpdated", {
+          type: "reservation_updated",
           reservation: reservation,
-          message: `Reservation for ${reservation.Room?.name || 'room'} has been updated`,
-          timestamp: new Date()
+          message: `Reservation for ${
+            reservation.Room?.name || "room"
+          } has been updated`,
+          timestamp: new Date(),
         });
       }
     }
@@ -159,15 +170,17 @@ function notifyReservationUpdated(reservation, organizationId) {
 function notifyReservationCancelled(reservation, organizationId) {
   try {
     if (!io) return;
-    
+
     // Notify all users in the organization about reservation cancellation
     for (const [userId, clientData] of clients.entries()) {
       if (clientData.organizationId === organizationId) {
-        io.to(clientData.socketId).emit('reservationCancelled', {
-          type: 'reservation_cancelled',
+        io.to(clientData.socketId).emit("reservationCancelled", {
+          type: "reservation_cancelled",
           reservation: reservation,
-          message: `Reservation for ${reservation.Room?.name || 'room'} has been cancelled`,
-          timestamp: new Date()
+          message: `Reservation for ${
+            reservation.Room?.name || "room"
+          } has been cancelled`,
+          timestamp: new Date(),
         });
       }
     }
@@ -180,15 +193,17 @@ function notifyReservationCancelled(reservation, organizationId) {
 function notifyReservationCompleted(reservation, organizationId) {
   try {
     if (!io) return;
-    
+
     // Notify all users in the organization about reservation completion
     for (const [userId, clientData] of clients.entries()) {
       if (clientData.organizationId === organizationId) {
-        io.to(clientData.socketId).emit('reservationCompleted', {
-          type: 'reservation_completed',
+        io.to(clientData.socketId).emit("reservationCompleted", {
+          type: "reservation_completed",
           reservation: reservation,
-          message: `Reservation for ${reservation.Room?.name || 'room'} has been completed`,
-          timestamp: new Date()
+          message: `Reservation for ${
+            reservation.Room?.name || "room"
+          } has been completed`,
+          timestamp: new Date(),
         });
       }
     }
@@ -197,9 +212,9 @@ function notifyReservationCompleted(reservation, organizationId) {
   }
 }
 
-module.exports = { 
-  initializeSocket, 
-  getIO, 
+module.exports = {
+  initializeSocket,
+  getIO,
   getClients,
   notifyAdminNewReservation,
   notifyEmployeeReservationStatus,
@@ -207,5 +222,5 @@ module.exports = {
   notifyRoomUpdated,
   notifyReservationUpdated,
   notifyReservationCancelled,
-  notifyReservationCompleted
+  notifyReservationCompleted,
 };

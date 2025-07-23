@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { getStatusColor } from "@/utils/helpers";
+import socket from "@/utils/socket";
+import { useEffect } from "react";
 
 const RecentActivities = () => {
   const recentActivities = [
@@ -36,6 +38,17 @@ const RecentActivities = () => {
       status: "maintenance",
     },
   ];
+
+  useEffect(() => {
+    socket.on("newReservationRequest", (data) => {
+      console.log(data);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
   return (
     <div className="lg:col-span-2">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
