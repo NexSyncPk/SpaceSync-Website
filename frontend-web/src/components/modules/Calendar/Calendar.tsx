@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import "react-calendar/dist/Calendar.css";
 import { Meetings, ReactCalendar } from "./subcomponents";
 import { getAllReservations } from "@/api/services/bookingService";
+import socket from "@/utils/socketManager";
 
 const Calendar: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -55,6 +56,29 @@ const Calendar: React.FC = () => {
 
   useEffect(() => {
     fetchReservations();
+  }, []);
+
+  useEffect(() => {
+    const handleReservationEvent = () => {
+      fetchReservations();
+      console.log("Calendar refreshed due to socket event");
+    };
+
+    // Listen for all reservation-related events to update calendar dots
+    socket.on("newReservationRequest", handleReservationEvent);
+    socket.on("reservationStatusUpdate", handleReservationEvent);
+    socket.on("reservationUpdated", handleReservationEvent);
+    socket.on("reservationCancelled", handleReservationEvent);
+    socket.on("reservationCompleted", handleReservationEvent);
+
+    // Cleanup on unmount
+    return () => {
+      socket.off("newReservationRequest", handleReservationEvent);
+      socket.off("reservationStatusUpdate", handleReservationEvent);
+      socket.off("reservationUpdated", handleReservationEvent);
+      socket.off("reservationCancelled", handleReservationEvent);
+      socket.off("reservationCompleted", handleReservationEvent);
+    };
   }, []);
 
   return (

@@ -76,7 +76,7 @@ const ReactCalendar = ({
                     {count <= 3 ? (
                       // Show individual dots for 1-3 meetings
                       Array.from({ length: count }).map((_, index) => (
-                        <div key={index} className="meeting-dot"></div>
+                        <div key={index} className="meeting-dot "></div>
                       ))
                     ) : (
                       // Show "+3" indicator for more than 3 meetings

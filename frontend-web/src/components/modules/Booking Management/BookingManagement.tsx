@@ -66,18 +66,25 @@ const BookingManagement: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const handleNewReservationRequest = () => {
+    const handleReservationEvent = () => {
       fetchReservations();
-      console.log("Fetched");
+      console.log("Reservations refetched due to socket event");
     };
 
-    // Listen for the event
-    socket.on("newReservationRequest", handleNewReservationRequest);
-    socket.on("reservationUpdated", handleNewReservationRequest);
+    // Listen for all reservation-related events
+    socket.on("newReservationRequest", handleReservationEvent);
+    socket.on("reservationStatusUpdate", handleReservationEvent);
+    socket.on("reservationUpdated", handleReservationEvent);
+    socket.on("reservationCancelled", handleReservationEvent);
+    socket.on("reservationCompleted", handleReservationEvent);
 
     // Cleanup on unmount
     return () => {
-      socket.off("newReservationRequest", handleNewReservationRequest);
+      socket.off("newReservationRequest", handleReservationEvent);
+      socket.off("reservationStatusUpdate", handleReservationEvent);
+      socket.off("reservationUpdated", handleReservationEvent);
+      socket.off("reservationCancelled", handleReservationEvent);
+      socket.off("reservationCompleted", handleReservationEvent);
     };
   }, []);
 
