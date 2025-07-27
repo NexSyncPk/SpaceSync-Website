@@ -84,20 +84,58 @@ function notifyAdminNewReservation(reservation, organizationId) {
 
 // Notify employee when admin responds to their reservation
 function notifyEmployeeReservationStatus(reservation, organizationId) {
+  // Persistent notification logic
+  const NotificationRepo = require("../repos/NotificationRepo");
+  const notificationRepo = new NotificationRepo();
   try {
     if (!io) return;
 
-    const employeeClient = clients.get(reservation.userId.toString());
+    // Notify organizer
+    const employeeClient = clients.get(reservation.userId?.toString());
+    const organizerMessage = `Your reservation has been ${reservation.status}`;
     if (employeeClient && employeeClient.organizationId === organizationId) {
       io.to(employeeClient.socketId).emit("reservationStatusUpdate", {
         type: "reservation_status_update",
         reservation: reservation,
-        message: `Your reservation has been ${reservation.status}`,
+        message: organizerMessage,
         timestamp: new Date(),
       });
     }
+    // Always create persistent notification
+    notificationRepo.createNotification({
+      userId: reservation.userId,
+      type: "reservation_status_update",
+      message: organizerMessage,
+      data: reservation,
+    });
+
+    // Notify all internal attendees
+    if (Array.isArray(reservation.internalAttendees)) {
+      reservation.internalAttendees.forEach(att => {
+        const attendeeId = att.id || att;
+        if (attendeeId !== reservation.userId) {
+          const attendeeClient = clients.get(attendeeId.toString());
+          const attendeeMessage = `You are invited to a reservation that has been ${reservation.status}`;
+          if (attendeeClient && attendeeClient.organizationId === organizationId) {
+            io.to(attendeeClient.socketId).emit("reservationStatusUpdate", {
+              type: "reservation_status_update",
+              reservation: reservation,
+              message: attendeeMessage,
+              timestamp: new Date(),
+            });
+          }
+          // Always create persistent notification
+          notificationRepo.createNotification({
+            userId: attendeeId,
+            type: "reservation_status_update",
+            message: attendeeMessage,
+            data: reservation,
+          });
+        }
+      });
+    }
   } catch (error) {
-    console.error("Error notifying employee:", error);
+    console.error("Error notifying employee/attendees:", error);
   }
 }
 
@@ -145,21 +183,52 @@ function notifyRoomUpdated(room, organizationId) {
 
 // Notify organization when reservation is updated
 function notifyReservationUpdated(reservation, organizationId) {
+  const NotificationRepo = require("../repos/NotificationRepo");
+  const notificationRepo = new NotificationRepo();
   try {
     if (!io) return;
 
-    // Notify all users in the organization about reservation update
-    for (const [userId, clientData] of clients.entries()) {
-      if (clientData.organizationId === organizationId) {
-        io.to(clientData.socketId).emit("reservationUpdated", {
-          type: "reservation_updated",
-          reservation: reservation,
-          message: `Reservation for ${
-            reservation.Room?.name || "room"
-          } has been updated`,
-          timestamp: new Date(),
-        });
-      }
+    // Notify organizer
+    const organizerClient = clients.get(reservation.userId?.toString());
+    const organizerMessage = `Your reservation for ${reservation.Room?.name || "room"} has been updated`;
+    if (organizerClient && organizerClient.organizationId === organizationId) {
+      io.to(organizerClient.socketId).emit("reservationUpdated", {
+        type: "reservation_updated",
+        reservation: reservation,
+        message: organizerMessage,
+        timestamp: new Date(),
+      });
+    }
+    notificationRepo.createNotification({
+      userId: reservation.userId,
+      type: "reservation_updated",
+      message: organizerMessage,
+      data: reservation,
+    });
+
+    // Notify all internal attendees
+    if (Array.isArray(reservation.internalAttendees)) {
+      reservation.internalAttendees.forEach(att => {
+        const attendeeId = att.id || att;
+        if (attendeeId !== reservation.userId) {
+          const attendeeClient = clients.get(attendeeId.toString());
+          const attendeeMessage = `A reservation you are invited to for ${reservation.Room?.name || "room"} has been updated`;
+          if (attendeeClient && attendeeClient.organizationId === organizationId) {
+            io.to(attendeeClient.socketId).emit("reservationUpdated", {
+              type: "reservation_updated",
+              reservation: reservation,
+              message: attendeeMessage,
+              timestamp: new Date(),
+            });
+          }
+          notificationRepo.createNotification({
+            userId: attendeeId,
+            type: "reservation_updated",
+            message: attendeeMessage,
+            data: reservation,
+          });
+        }
+      });
     }
   } catch (error) {
     console.error("Error notifying reservation update:", error);
@@ -168,21 +237,52 @@ function notifyReservationUpdated(reservation, organizationId) {
 
 // Notify organization when reservation is cancelled
 function notifyReservationCancelled(reservation, organizationId) {
+  const NotificationRepo = require("../repos/NotificationRepo");
+  const notificationRepo = new NotificationRepo();
   try {
     if (!io) return;
 
-    // Notify all users in the organization about reservation cancellation
-    for (const [userId, clientData] of clients.entries()) {
-      if (clientData.organizationId === organizationId) {
-        io.to(clientData.socketId).emit("reservationCancelled", {
-          type: "reservation_cancelled",
-          reservation: reservation,
-          message: `Reservation for ${
-            reservation.Room?.name || "room"
-          } has been cancelled`,
-          timestamp: new Date(),
-        });
-      }
+    // Notify organizer
+    const organizerClient = clients.get(reservation.userId?.toString());
+    const organizerMessage = `Your reservation for ${reservation.Room?.name || "room"} has been cancelled`;
+    if (organizerClient && organizerClient.organizationId === organizationId) {
+      io.to(organizerClient.socketId).emit("reservationCancelled", {
+        type: "reservation_cancelled",
+        reservation: reservation,
+        message: organizerMessage,
+        timestamp: new Date(),
+      });
+    }
+    notificationRepo.createNotification({
+      userId: reservation.userId,
+      type: "reservation_cancelled",
+      message: organizerMessage,
+      data: reservation,
+    });
+
+    // Notify all internal attendees
+    if (Array.isArray(reservation.internalAttendees)) {
+      reservation.internalAttendees.forEach(att => {
+        const attendeeId = att.id || att;
+        if (attendeeId !== reservation.userId) {
+          const attendeeClient = clients.get(attendeeId.toString());
+          const attendeeMessage = `A reservation you are invited to for ${reservation.Room?.name || "room"} has been cancelled`;
+          if (attendeeClient && attendeeClient.organizationId === organizationId) {
+            io.to(attendeeClient.socketId).emit("reservationCancelled", {
+              type: "reservation_cancelled",
+              reservation: reservation,
+              message: attendeeMessage,
+              timestamp: new Date(),
+            });
+          }
+          notificationRepo.createNotification({
+            userId: attendeeId,
+            type: "reservation_cancelled",
+            message: attendeeMessage,
+            data: reservation,
+          });
+        }
+      });
     }
   } catch (error) {
     console.error("Error notifying reservation cancellation:", error);

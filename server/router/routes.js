@@ -66,10 +66,15 @@ router.get('/health', (req, res) => {
     });
 });
 
+
 router.use("/organization", organizationRoutes);
 router.use("/user", userRoutes);
 router.use("/admin", adminRoutes);
 router.use("/external-attendees", externalAttendeeRoutes);
+
+// Notifications route
+const notificationRoutes = require("./notification.route.js");
+router.use("/notifications", notificationRoutes);
 
 // Global room and reservation routes (for admin/cross-org access)
 router.use("/rooms", roomRoutes);
