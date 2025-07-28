@@ -209,3 +209,50 @@ export const getStatusStylesBooking = (status: string) => {
       };
   }
 };
+
+// Helper function to format time ago
+export const formatTimeAgo = (timestamp: string) => {
+  const now = new Date();
+  const time = new Date(timestamp);
+  const diffInMinutes = Math.floor(
+    (now.getTime() - time.getTime()) / (1000 * 60)
+  );
+
+  if (diffInMinutes < 1) return "Just now";
+  if (diffInMinutes < 60)
+    return `${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""} ago`;
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24)
+    return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
+
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
+};
+
+// Get background gradient for notification type
+export const getNotificationGradient = (type: string) => {
+  switch (type) {
+    case "new_reservation_request":
+      return "bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200";
+    case "reservation_cancelled":
+      return "bg-gradient-to-r from-red-50 to-red-100 border-red-200";
+    case "reservation_created":
+    case "reservation_approved":
+      return "bg-gradient-to-r from-green-50 to-green-100 border-green-200";
+    case "reservation_updated":
+      return "bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200";
+    case "reservation_rejected":
+      return "bg-gradient-to-r from-red-50 to-red-100 border-red-200";
+    case "user_joined":
+      return "bg-gradient-to-r from-indigo-50 to-indigo-100 border-indigo-200";
+    case "room_booked":
+      return "bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200";
+    case "meeting_reminder":
+      return "bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200";
+    case "general":
+      return "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200";
+    default:
+      return "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200";
+  }
+};

@@ -1,103 +1,44 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   markAsRead,
   markAllAsRead,
-  addNotification,
 } from "../../store/slices/notificationSlice";
+import {
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+} from "@/api/services/userService";
 
 const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const notificationState = useSelector((state: any) => state.notification);
   const { notifications = [], unreadCount = 0 } = notificationState || {};
-  const { current: organization } = useSelector(
-    (state: any) => state.organization
-  );
   const dispatch = useDispatch();
 
-  // Add sample notifications for demonstration
-  useEffect(() => {
-    // Only add notifications if there are none and user is admin
-    if (notifications.length === 0 && organization?.role === "admin") {
-      const sampleNotifications = [
-        {
-          id: Date.now().toString() + "1",
-          type: "user_joined" as const,
-          message: "John Smith has joined the organization",
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-          read: false,
-        },
-        {
-          id: Date.now().toString() + "2",
-          type: "room_booked" as const,
-          message: "Conference Room A has been booked for tomorrow at 2:00 PM",
-          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
-          read: false,
-        },
-        {
-          id: Date.now().toString() + "3",
-          type: "meeting_reminder" as const,
-          message:
-            "Meeting reminder: Team standup in Conference Room B starts in 30 minutes",
-          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
-          read: true,
-        },
-        {
-          id: Date.now().toString() + "4",
-          type: "user_joined" as const,
-          message: "Sarah Johnson has joined the organization",
-          timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
-          read: false,
-        },
-        {
-          id: Date.now().toString() + "5",
-          type: "room_booked" as const,
-          message: "Creative Studio has been booked for Friday at 10:00 AM",
-          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-          read: true,
-        },
-        {
-          id: Date.now().toString() + "6",
-          type: "general" as const,
-          message: "New room cleaning schedule has been implemented",
-          timestamp: new Date(
-            Date.now() - 2 * 24 * 60 * 60 * 1000
-          ).toISOString(), // 2 days ago
-          read: true,
-        },
-        {
-          id: Date.now().toString() + "7",
-          type: "user_joined" as const,
-          message: "Mike Davis has joined the organization",
-          timestamp: new Date(
-            Date.now() - 3 * 24 * 60 * 60 * 1000
-          ).toISOString(), // 3 days ago
-          read: false,
-        },
-        {
-          id: Date.now().toString() + "8",
-          type: "room_booked" as const,
-          message: "Training Room has been booked for next week",
-          timestamp: new Date(
-            Date.now() - 4 * 24 * 60 * 60 * 1000
-          ).toISOString(), // 4 days ago
-          read: true,
-        },
-      ];
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      // First update the UI immediately
+      dispatch(markAsRead(id));
 
-      // Add notifications one by one
-      sampleNotifications.forEach((notification) => {
-        dispatch(addNotification(notification));
-      });
+      // Then call the API
+      await markNotificationAsRead(id);
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      // You might want to revert the UI change here if the API call fails
     }
-  }, [dispatch, notifications.length, organization?.role]);
-
-  const handleMarkAsRead = (id: string) => {
-    dispatch(markAsRead(id));
   };
 
-  const handleMarkAllAsRead = () => {
-    dispatch(markAllAsRead());
+  const handleMarkAllAsRead = async () => {
+    try {
+      // First update the UI immediately
+      dispatch(markAllAsRead());
+
+      // Then call the API
+      await markAllNotificationsAsRead();
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      // You might want to revert the UI change here if the API call fails
+    }
   };
 
   // Get icon for notification type
@@ -109,6 +50,12 @@ const NotificationBell: React.FC = () => {
         return "🏢";
       case "meeting_reminder":
         return "⏰";
+      case "reservation_cancelled":
+        return "❌";
+      case "reservation_created":
+        return "✅";
+      case "reservation_updated":
+        return "✏️";
       case "general":
         return "📢";
       default:
@@ -133,10 +80,54 @@ const NotificationBell: React.FC = () => {
     }
   };
 
-  // Only show notifications for admins
-  if (organization?.role !== "admin") {
-    return null;
-  }
+  // Get color class for notification type
+  const getNotificationColorClass = (type: string) => {
+    switch (type) {
+      case "user_joined":
+        return "bg-green-100 text-green-700";
+      case "room_booked":
+        return "bg-blue-100 text-blue-700";
+      case "meeting_reminder":
+        return "bg-orange-100 text-orange-700";
+      case "reservation_cancelled":
+        return "bg-red-100 text-red-700";
+      case "reservation_created":
+        return "bg-green-100 text-green-700";
+      case "reservation_updated":
+        return "bg-yellow-100 text-yellow-700";
+      case "general":
+        return "bg-gray-100 text-gray-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  // Enhanced notification message with data
+  const getEnhancedMessage = (notification: any) => {
+    if (notification.data && notification.type === "reservation_cancelled") {
+      const roomName = notification.data.Room?.name || "Unknown Room";
+      const title = notification.data.title || "Meeting";
+      const startTime = notification.data.startTime
+        ? new Date(notification.data.startTime).toLocaleDateString()
+        : "";
+
+      return (
+        <div>
+          <p className="font-medium">{notification.message}</p>
+          <p className="text-xs text-gray-500 mt-1">
+            Title: {title} • Room: {roomName}
+            {startTime && ` • Date: ${startTime}`}
+          </p>
+        </div>
+      );
+    }
+    return <p>{notification.message}</p>;
+  };
+
+  // Format notification type for display
+  const formatNotificationType = (type: string) => {
+    return type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  };
 
   return (
     <div className="relative">
@@ -203,31 +194,25 @@ const NotificationBell: React.FC = () => {
                         {getNotificationIcon(notification.type)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p
+                        <div
                           className={`text-sm ${
                             !notification.read
                               ? "font-medium text-gray-900"
                               : "text-gray-700"
                           }`}
                         >
-                          {notification.message}
-                        </p>
+                          {getEnhancedMessage(notification)}
+                        </div>
                         <div className="flex items-center justify-between mt-1">
                           <p className="text-xs text-gray-500">
                             {getRelativeTime(notification.timestamp)}
                           </p>
                           <span
-                            className={`text-xs px-2 py-0.5 rounded-full ${
-                              notification.type === "user_joined"
-                                ? "bg-green-100 text-green-700"
-                                : notification.type === "room_booked"
-                                ? "bg-blue-100 text-blue-700"
-                                : notification.type === "meeting_reminder"
-                                ? "bg-orange-100 text-orange-700"
-                                : "bg-gray-100 text-gray-700"
-                            }`}
+                            className={`text-xs px-2 py-0.5 rounded-full ${getNotificationColorClass(
+                              notification.type
+                            )}`}
                           >
-                            {notification.type.replace("_", " ")}
+                            {formatNotificationType(notification.type)}
                           </span>
                         </div>
                       </div>

@@ -17,6 +17,9 @@ import {
   ADMIN_USER_PROMOTE,
   ADMIN_USER_DEMOTE,
   ADMIN_USER_REMOVE,
+  GET_NOTIFICATIONS,
+  MARK_NOTIFICATION_READ,
+  MARK_ALL_NOTIFICATIONS_READ,
 } from "../endpoints";
 import api from "../interceptor";
 import { store } from "@/store/store";
@@ -293,6 +296,50 @@ const getAllBookings = () => {
   }
 };
 
+const getAllNotifications = async () => {
+  try {
+    console.log("Making request to:", GET_NOTIFICATIONS);
+    const response = await api.get(GET_NOTIFICATIONS);
+    return response;
+  } catch (error: any) {
+    console.error("Error in getAllNotifications service:", error);
+
+    if (error.response) {
+      console.error("Response error:", {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers,
+      });
+    } else if (error.request) {
+      console.error("Request error:", error.request);
+    } else {
+      console.error("Error message:", error.message);
+    }
+
+    throw error; // Re-throw to let the component handle it
+  }
+};
+
+const markNotificationAsRead = async (notificationId: string) => {
+  try {
+    const response = await api.patch(MARK_NOTIFICATION_READ(notificationId));
+    return response;
+  } catch (error: any) {
+    console.error("Error marking notification as read:", error);
+    throw error;
+  }
+};
+
+const markAllNotificationsAsRead = async () => {
+  try {
+    const response = await api.patch(MARK_ALL_NOTIFICATIONS_READ);
+    return response;
+  } catch (error: any) {
+    console.error("Error marking all notifications as read:", error);
+    throw error;
+  }
+};
+
 export {
   fetchOrganizationByUser,
   createOrganization,
@@ -313,4 +360,7 @@ export {
   promoteToAdmin,
   demoteToEmployee,
   deleteUserFromOrg,
+  getAllNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
 };

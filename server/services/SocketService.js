@@ -1,4 +1,5 @@
 const { Server } = require("socket.io");
+const NotificationRepo = require("../repos/NotificationRepo");
 
 let clients = new Map();
 let io = null;
@@ -61,6 +62,8 @@ function notifyAdminNewReservation(reservation, organizationId) {
   try {
     if (!io) return;
 
+    const notificationRepo = new NotificationRepo();
+
     // Find all admin users in the organization
     for (const [userId, clientData] of clients.entries()) {
       if (
@@ -75,6 +78,16 @@ function notifyAdminNewReservation(reservation, organizationId) {
           }`,
           timestamp: new Date(),
         });
+
+        // Create persistent notification for admin
+        notificationRepo.createNotification({
+          userId: userId,
+          type: "new_reservation_request",
+          message: `New reservation request from ${
+            reservation.User?.name || "Employee"
+          }`,
+          data: reservation,
+        });
       }
     }
   } catch (error) {
@@ -85,7 +98,7 @@ function notifyAdminNewReservation(reservation, organizationId) {
 // Notify employee when admin responds to their reservation
 function notifyEmployeeReservationStatus(reservation, organizationId) {
   // Persistent notification logic
-  const NotificationRepo = require("../repos/NotificationRepo");
+
   const notificationRepo = new NotificationRepo();
   try {
     if (!io) return;
@@ -111,12 +124,15 @@ function notifyEmployeeReservationStatus(reservation, organizationId) {
 
     // Notify all internal attendees
     if (Array.isArray(reservation.internalAttendees)) {
-      reservation.internalAttendees.forEach(att => {
+      reservation.internalAttendees.forEach((att) => {
         const attendeeId = att.id || att;
         if (attendeeId !== reservation.userId) {
           const attendeeClient = clients.get(attendeeId.toString());
           const attendeeMessage = `You are invited to a reservation that has been ${reservation.status}`;
-          if (attendeeClient && attendeeClient.organizationId === organizationId) {
+          if (
+            attendeeClient &&
+            attendeeClient.organizationId === organizationId
+          ) {
             io.to(attendeeClient.socketId).emit("reservationStatusUpdate", {
               type: "reservation_status_update",
               reservation: reservation,
@@ -190,7 +206,9 @@ function notifyReservationUpdated(reservation, organizationId) {
 
     // Notify organizer
     const organizerClient = clients.get(reservation.userId?.toString());
-    const organizerMessage = `Your reservation for ${reservation.Room?.name || "room"} has been updated`;
+    const organizerMessage = `Your reservation for ${
+      reservation.Room?.name || "room"
+    } has been updated`;
     if (organizerClient && organizerClient.organizationId === organizationId) {
       io.to(organizerClient.socketId).emit("reservationUpdated", {
         type: "reservation_updated",
@@ -208,12 +226,17 @@ function notifyReservationUpdated(reservation, organizationId) {
 
     // Notify all internal attendees
     if (Array.isArray(reservation.internalAttendees)) {
-      reservation.internalAttendees.forEach(att => {
+      reservation.internalAttendees.forEach((att) => {
         const attendeeId = att.id || att;
         if (attendeeId !== reservation.userId) {
           const attendeeClient = clients.get(attendeeId.toString());
-          const attendeeMessage = `A reservation you are invited to for ${reservation.Room?.name || "room"} has been updated`;
-          if (attendeeClient && attendeeClient.organizationId === organizationId) {
+          const attendeeMessage = `A reservation you are invited to for ${
+            reservation.Room?.name || "room"
+          } has been updated`;
+          if (
+            attendeeClient &&
+            attendeeClient.organizationId === organizationId
+          ) {
             io.to(attendeeClient.socketId).emit("reservationUpdated", {
               type: "reservation_updated",
               reservation: reservation,
@@ -244,7 +267,9 @@ function notifyReservationCancelled(reservation, organizationId) {
 
     // Notify organizer
     const organizerClient = clients.get(reservation.userId?.toString());
-    const organizerMessage = `Your reservation for ${reservation.Room?.name || "room"} has been cancelled`;
+    const organizerMessage = `Your reservation for ${
+      reservation.Room?.name || "room"
+    } has been cancelled`;
     if (organizerClient && organizerClient.organizationId === organizationId) {
       io.to(organizerClient.socketId).emit("reservationCancelled", {
         type: "reservation_cancelled",
@@ -262,12 +287,17 @@ function notifyReservationCancelled(reservation, organizationId) {
 
     // Notify all internal attendees
     if (Array.isArray(reservation.internalAttendees)) {
-      reservation.internalAttendees.forEach(att => {
+      reservation.internalAttendees.forEach((att) => {
         const attendeeId = att.id || att;
         if (attendeeId !== reservation.userId) {
           const attendeeClient = clients.get(attendeeId.toString());
-          const attendeeMessage = `A reservation you are invited to for ${reservation.Room?.name || "room"} has been cancelled`;
-          if (attendeeClient && attendeeClient.organizationId === organizationId) {
+          const attendeeMessage = `A reservation you are invited to for ${
+            reservation.Room?.name || "room"
+          } has been cancelled`;
+          if (
+            attendeeClient &&
+            attendeeClient.organizationId === organizationId
+          ) {
             io.to(attendeeClient.socketId).emit("reservationCancelled", {
               type: "reservation_cancelled",
               reservation: reservation,

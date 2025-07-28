@@ -219,7 +219,6 @@ const CreateMeetingForm: React.FC = () => {
         }
       } catch (error) {
         console.error("Error fetching organization members:", error);
-        toast.error("Failed to load organization members");
       } finally {
         setLoadingMembers(false);
       }

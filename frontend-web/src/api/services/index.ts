@@ -17,6 +17,9 @@ export {
   promoteToAdmin,
   demoteToEmployee,
   deleteUserFromOrg,
+  getAllNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
 } from "./userService";
 
 export {
