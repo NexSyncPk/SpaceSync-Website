@@ -3,12 +3,12 @@ import { useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
-import { setOrganization } from "../../../store/slices/organizationSlice";
+import { setOrganization } from "../../../../store/slices/organizationSlice";
 import {
   createOrganizationSchema,
   CreateOrganizationFormData,
 } from "@/schema/validationSchemas";
-import { refreshOrganizationData } from "../../../utils/organizationHelpers";
+import { refreshOrganizationData } from "../../../../utils/organizationHelpers";
 import { useOrganizationOperations } from "@/hooks/useOrganizationOperations";
 
 interface CreateOrganizationProps {
@@ -18,7 +18,8 @@ interface CreateOrganizationProps {
 const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
-  const { handleCreateOrganization, isProcessing } = useOrganizationOperations();
+  const { handleCreateOrganization, isProcessing } =
+    useOrganizationOperations();
 
   const {
     register,
@@ -132,7 +133,7 @@ const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onBack }) => {
               disabled={isProcessing || loading || isSubmitting}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {(isProcessing || loading || isSubmitting) ? (
+              {isProcessing || loading || isSubmitting ? (
                 <div className="flex items-center">
                   <svg
                     className="animate-spin -ml-1 mr-3 h-4 w-4 text-white"

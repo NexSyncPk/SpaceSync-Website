@@ -80,17 +80,6 @@ const Routes = () => {
           </ProtectedRoute>
         }
       />
-      {/* <Route
-        path="/organization"
-        element={
-          <ProtectedRoute>
-            <UserLayout>
-              <OrganizationView />
-            </UserLayout>
-          </ProtectedRoute>
-        }
-      /> */}
-
       {/* Admin Routes */}
       <Route
         path="/admin"

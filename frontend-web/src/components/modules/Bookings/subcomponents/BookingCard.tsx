@@ -6,8 +6,8 @@ import {
 import { deleteBooking } from "../../../../store/slices/bookingSlice";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
-import EditBookingModal from "./../EditBookingModal";
-import DeleteBookingModal from "../DeleteBookingModal";
+import EditBookingModal from "./EditBookingModal";
+import DeleteBookingModal from "./DeleteBookingModal";
 import {
   formatDate,
   formatTime,

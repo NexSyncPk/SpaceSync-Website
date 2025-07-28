@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import {
   Reservation,
   updateReservation,
-} from "../../../api/services/bookingService";
+} from "../../../../api/services/bookingService";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
-import { updateBooking } from "../../../store/slices/bookingSlice";
+import { updateBooking } from "../../../../store/slices/bookingSlice";
 
 interface EditBookingModalProps {
   isOpen: boolean;

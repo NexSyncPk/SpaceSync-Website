@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
-import { setOrganization } from "../../../store/slices/organizationSlice";
-import { addNotification } from "../../../store/slices/notificationSlice";
+import { setOrganization } from "../../../../store/slices/organizationSlice";
+import { addNotification } from "../../../../store/slices/notificationSlice";
 // import toast from "react-hot-toast";
 // import { getAllOrganizations } from "@/api/services/userService";
-import { refreshOrganizationData } from "../../../utils/organizationHelpers";
+import { refreshOrganizationData } from "../../../../utils/organizationHelpers";
 import { useOrganizationOperations } from "@/hooks/useOrganizationOperations";
 
 interface JoinOrganizationProps {

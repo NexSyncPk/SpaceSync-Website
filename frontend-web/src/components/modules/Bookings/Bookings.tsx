@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import BookingCard from "./subcomponents/BookingCard";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../../store/store";
 import { getUserBookings } from "../../../api/services/bookingService";
@@ -11,6 +10,7 @@ import {
 } from "../../../store/slices/bookingSlice";
 
 import socket from "@/utils/socketManager";
+import { BookingCard } from "./subcomponents";
 
 const Bookings: React.FC = () => {
   const dispatch = useDispatch();

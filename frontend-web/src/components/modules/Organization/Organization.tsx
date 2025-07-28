@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import CreateOrganization from "./CreateOrganization";
-import JoinOrganization from "./JoinOrganization";
-import MyOrganization from "./MyOrganization";
+import {
+  CreateOrganization,
+  JoinOrganization,
+  MyOrganization,
+} from "./subcomponents";
 
 const Organization: React.FC = () => {
   const [selectedOption, setSelectedOption] = useState<

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setOrganization } from "../../../store/slices/organizationSlice";
-import { addNotification } from "../../../store/slices/notificationSlice";
-import { updateUser } from "../../../store/slices/authSlice";
+import { setOrganization } from "../../../../store/slices/organizationSlice";
+import { addNotification } from "../../../../store/slices/notificationSlice";
+import { updateUser } from "../../../../store/slices/authSlice";
 import { fetchOrganizationByUser } from "@/api/services/userService";
 import { useOrganizationOperations } from "@/hooks/useOrganizationOperations";
 import toast from "react-hot-toast";
-import { refreshOrganizationData } from "../../../utils/organizationHelpers";
+import { refreshOrganizationData } from "../../../../utils/organizationHelpers";
 
 interface MyOrganizationProps {
   onBack: () => void;
